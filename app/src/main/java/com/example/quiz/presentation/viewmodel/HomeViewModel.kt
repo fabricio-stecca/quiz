@@ -37,4 +37,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+    
+    fun refreshCategories() {
+        loadCategories()
+    }
 }

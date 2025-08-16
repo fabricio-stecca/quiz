@@ -37,12 +37,36 @@ fun HomeScreen(
             .padding(16.dp)
     ) {
         // Header with refresh button
-        // Header
-        Text(
-            text = "Quizes",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Quizes",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            IconButton(
+                onClick = { viewModel.refreshCategories() },
+                enabled = !uiState.isLoading
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Atualizar quizes",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
         
         Spacer(modifier = Modifier.height(8.dp))
 

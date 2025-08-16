@@ -434,7 +434,7 @@ fun CreateEditQuizScreen(
             OutlinedTextField(
                 value = category,
                 onValueChange = { category = it },
-                label = { Text("Categoria do Quiz") },
+                label = { Text("Nome do Quiz") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 enabled = !isEditMode // Não permitir editar categoria
@@ -632,7 +632,7 @@ data class QuestionForm(
     val questionText: String = "",
     val options: List<String> = listOf("", "", "", ""),
     val correctAnswer: Int = 0,
-    val difficulty: String = "medium",
+    val difficulty: String = "easy",
     val points: Int = 10
 ) {
     fun isValid(): Boolean {
