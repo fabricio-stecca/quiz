@@ -8,6 +8,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -26,12 +27,73 @@ class QuestionRepository(
 
     suspend fun syncQuestionsFromFirebase(): Result<Unit> {
         return try {
-            val questions = fetchQuestionsFromFirebase()
+            val questions = fetchQuestionsFromFirestore()
             questionDao.deleteAllQuestions()
             questionDao.insertQuestions(questions)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    private suspend fun fetchQuestionsFromFirestore(): List<Question> {
+        return try {
+            val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            val questions = mutableListOf<Question>()
+            
+            // Buscar questões de "Conhecimentos Gerais"
+            val conhecimentosGerais = firestore.collection("questions")
+                .document("conhecimentos_gerais")
+                .collection("perguntas")
+                .get()
+                .await()
+                
+            for (doc in conhecimentosGerais.documents) {
+                try {
+                    val options = doc.get("options") as? List<String> ?: continue
+                    val question = Question(
+                        id = doc.id,
+                        category = "Conhecimentos Gerais",
+                        questionText = doc.getString("questionText") ?: continue,
+                        options = options,
+                        correctAnswer = (doc.getLong("correctAnswer") ?: 0).toInt(),
+                        difficulty = doc.getString("difficulty") ?: "medium",
+                        points = (doc.getLong("points") ?: 10).toInt()
+                    )
+                    questions.add(question)
+                } catch (e: Exception) {
+                    // Skip malformed questions
+                }
+            }
+            
+            // Buscar questões de "Ciências"
+            val ciencias = firestore.collection("questions")
+                .document("ciencias")
+                .collection("perguntas")
+                .get()
+                .await()
+                
+            for (doc in ciencias.documents) {
+                try {
+                    val options = doc.get("options") as? List<String> ?: continue
+                    val question = Question(
+                        id = doc.id,
+                        category = "Ciências",
+                        questionText = doc.getString("questionText") ?: continue,
+                        options = options,
+                        correctAnswer = (doc.getLong("correctAnswer") ?: 0).toInt(),
+                        difficulty = doc.getString("difficulty") ?: "medium",
+                        points = (doc.getLong("points") ?: 10).toInt()
+                    )
+                    questions.add(question)
+                } catch (e: Exception) {
+                    // Skip malformed questions
+                }
+            }
+            
+            questions
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 
@@ -115,5 +177,115 @@ class QuestionRepository(
             )
         )
         questionDao.insertQuestions(sampleQuestions)
+    }
+
+    suspend fun addNewQuizzesToFirestore() {
+        try {
+            val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            
+            // Verificar se já existem questões
+            val existingQuestions = firestore.collection("questions")
+                .document("conhecimentos_gerais")
+                .collection("perguntas")
+                .limit(1)
+                .get()
+                .await()
+                
+            if (!existingQuestions.isEmpty) {
+                return // Questões já existem, não adicionar novamente
+            }
+            
+            // Quiz 1: Conhecimentos Gerais
+            val quiz1Questions = listOf(
+                mapOf(
+                    "category" to "Conhecimentos Gerais",
+                    "questionText" to "Qual é a capital do Brasil?",
+                    "options" to listOf("São Paulo", "Rio de Janeiro", "Brasília", "Salvador"),
+                    "correctAnswer" to 2,
+                    "difficulty" to "easy",
+                    "points" to 10
+                ),
+                mapOf(
+                    "category" to "Conhecimentos Gerais", 
+                    "questionText" to "Quantos continentes existem no mundo?",
+                    "options" to listOf("5", "6", "7", "8"),
+                    "correctAnswer" to 2,
+                    "difficulty" to "easy",
+                    "points" to 10
+                ),
+                mapOf(
+                    "category" to "Conhecimentos Gerais",
+                    "questionText" to "Qual é o maior oceano do mundo?",
+                    "options" to listOf("Atlântico", "Índico", "Ártico", "Pacífico"),
+                    "correctAnswer" to 3,
+                    "difficulty" to "medium",
+                    "points" to 15
+                ),
+                mapOf(
+                    "category" to "Conhecimentos Gerais",
+                    "questionText" to "Em que ano o homem pisou na Lua pela primeira vez?",
+                    "options" to listOf("1967", "1968", "1969", "1970"),
+                    "correctAnswer" to 2,
+                    "difficulty" to "medium",
+                    "points" to 15
+                )
+            )
+
+            // Quiz 2: Ciências
+            val quiz2Questions = listOf(
+                mapOf(
+                    "category" to "Ciências",
+                    "questionText" to "Qual é a fórmula química da água?",
+                    "options" to listOf("CO2", "H2O", "O2", "NaCl"),
+                    "correctAnswer" to 1,
+                    "difficulty" to "easy",
+                    "points" to 10
+                ),
+                mapOf(
+                    "category" to "Ciências",
+                    "questionText" to "Qual planeta é conhecido como 'Planeta Vermelho'?",
+                    "options" to listOf("Vênus", "Júpiter", "Marte", "Saturno"),
+                    "correctAnswer" to 2,
+                    "difficulty" to "easy", 
+                    "points" to 10
+                ),
+                mapOf(
+                    "category" to "Ciências",
+                    "questionText" to "Quantos ossos tem o corpo humano adulto?",
+                    "options" to listOf("206", "208", "210", "212"),
+                    "correctAnswer" to 0,
+                    "difficulty" to "medium",
+                    "points" to 15
+                ),
+                mapOf(
+                    "category" to "Ciências",
+                    "questionText" to "Qual é o elemento químico mais abundante no universo?",
+                    "options" to listOf("Oxigênio", "Carbono", "Hidrogênio", "Nitrogênio"),
+                    "correctAnswer" to 2,
+                    "difficulty" to "medium",
+                    "points" to 15
+                )
+            )
+
+            // Adicionar questões ao Firestore organizadas por categoria
+            for ((index, questionData) in quiz1Questions.withIndex()) {
+                firestore.collection("questions")
+                    .document("conhecimentos_gerais")
+                    .collection("perguntas")
+                    .document("questao_${index + 1}")
+                    .set(questionData)
+            }
+            
+            for ((index, questionData) in quiz2Questions.withIndex()) {
+                firestore.collection("questions")
+                    .document("ciencias")
+                    .collection("perguntas")
+                    .document("questao_${index + 1}")
+                    .set(questionData)
+            }
+            
+        } catch (e: Exception) {
+            // Handle error silently
+        }
     }
 }

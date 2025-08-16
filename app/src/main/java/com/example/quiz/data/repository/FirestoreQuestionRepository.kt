@@ -54,7 +54,7 @@ class FirestoreQuestionRepository {
             val existingQuestions = questionsCollection.limit(1).get().await()
             if (!existingQuestions.isEmpty) return
 
-            // Adiciona perguntas de exemplo
+            // Adiciona perguntas de exemplo em inglês
             val sampleQuestions = listOf(
                 mapOf(
                     "question" to "What is the capital of Brazil?",
@@ -116,6 +116,56 @@ class FirestoreQuestionRepository {
 
             // Adiciona cada pergunta ao Firestore
             sampleQuestions.forEach { questionData ->
+                questionsCollection.add(questionData).await()
+            }
+        } catch (e: Exception) {
+            // Handle error silently
+        }
+    }
+
+    suspend fun addQuizBrasil() {
+        try {
+            // Quiz específico sobre o Brasil - 5 perguntas
+            val quizBrasil = listOf(
+                mapOf(
+                    "question" to "Qual é a capital do Brasil?",
+                    "options" to listOf("São Paulo", "Rio de Janeiro", "Brasília", "Salvador"),
+                    "correctAnswerIndex" to 2,
+                    "category" to "Quiz Brasil",
+                    "difficulty" to "easy"
+                ),
+                mapOf(
+                    "question" to "Qual é o maior estado brasileiro em área territorial?",
+                    "options" to listOf("Bahia", "Minas Gerais", "Amazonas", "Pará"),
+                    "correctAnswerIndex" to 2,
+                    "category" to "Quiz Brasil",
+                    "difficulty" to "medium"
+                ),
+                mapOf(
+                    "question" to "Em que ano o Brasil foi descoberto pelos portugueses?",
+                    "options" to listOf("1498", "1500", "1502", "1505"),
+                    "correctAnswerIndex" to 1,
+                    "category" to "Quiz Brasil",
+                    "difficulty" to "easy"
+                ),
+                mapOf(
+                    "question" to "Qual é a moeda oficial do Brasil?",
+                    "options" to listOf("Peso", "Real", "Cruzeiro", "Dólar"),
+                    "correctAnswerIndex" to 1,
+                    "category" to "Quiz Brasil",
+                    "difficulty" to "easy"
+                ),
+                mapOf(
+                    "question" to "Qual dessas cidades NÃO é uma capital de estado brasileiro?",
+                    "options" to listOf("Campinas", "Curitiba", "Porto Alegre", "Recife"),
+                    "correctAnswerIndex" to 0,
+                    "category" to "Quiz Brasil",
+                    "difficulty" to "medium"
+                )
+            )
+
+            // Adiciona cada pergunta do quiz ao Firestore
+            quizBrasil.forEach { questionData ->
                 questionsCollection.add(questionData).await()
             }
         } catch (e: Exception) {

@@ -76,9 +76,6 @@ fun QuizNavigation(
                 userId = userId,
                 onNavigateBack = {
                     navController.popBackStack()
-                },
-                onQuizComplete = {
-                    navController.popBackStack()
                 }
             )
         }

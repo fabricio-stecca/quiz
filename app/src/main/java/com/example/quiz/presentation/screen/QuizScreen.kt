@@ -28,16 +28,13 @@ fun QuizScreen(
     category: String,
     userId: String,
     onNavigateBack: () -> Unit,
-    onQuizComplete: () -> Unit,
     viewModel: QuizViewModel = viewModel()
 ) {
-    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     
     val questions = uiState.questions
     val currentQuestionIndex = uiState.currentQuestionIndex
     val selectedAnswers = uiState.selectedAnswers
-    val isQuizCompleted = uiState.isQuizCompleted
     val quizResult = uiState.score?.let { score ->
         QuizResult(
             correctAnswers = score.correctAnswers,
@@ -53,13 +50,6 @@ fun QuizScreen(
         viewModel.loadQuestions(category)
     }
 
-    // Handle quiz completion
-    LaunchedEffect(isQuizCompleted) {
-        if (isQuizCompleted) {
-            onQuizComplete()
-        }
-    }
-
     if (questions.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -72,7 +62,7 @@ fun QuizScreen(
 
     if (quizResult != null) {
         QuizResultScreen(
-            result = quizResult!!,
+            result = quizResult,
             onNavigateBack = onNavigateBack,
             onRetakeQuiz = {
                 viewModel.resetQuiz()
@@ -93,21 +83,32 @@ fun QuizScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Top Bar
+        // Top Bar with Exit Button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onNavigateBack) {
+            // Exit Button
+            OutlinedButton(
+                onClick = onNavigateBack,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
+                    contentDescription = "Exit Quiz"
                 )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Sair")
             }
+
+            // Progress indicator
             Text(
                 text = "${currentQuestionIndex + 1} / ${questions.size}",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
         }
 
@@ -177,31 +178,61 @@ fun QuizScreen(
                         contentDescription = "Previous"
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Previous")
+                    Text("Anterior")
                 }
             } else {
                 Spacer(modifier = Modifier.width(1.dp))
             }
 
-            // Next/Finish button
-            if (currentQuestionIndex < questions.size - 1) {
-                Button(
-                    onClick = { viewModel.goToNextQuestion() },
-                    enabled = selectedAnswers[currentQuestionIndex]?.isNotEmpty() == true
-                ) {
-                    Text("Next")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Next"
-                    )
+            // Check if all questions are answered
+            val allQuestionsAnswered = (0 until questions.size).all { questionIndex ->
+                selectedAnswers[questionIndex]?.isNotEmpty() == true
+            }
+
+            // Next/Finish button logic
+            when {
+                // Not on last question - show Next button
+                currentQuestionIndex < questions.size - 1 -> {
+                    Button(
+                        onClick = { viewModel.goToNextQuestion() },
+                        enabled = selectedAnswers[currentQuestionIndex]?.isNotEmpty() == true
+                    ) {
+                        Text("Próxima")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Next"
+                        )
+                    }
                 }
-            } else {
-                Button(
-                    onClick = { viewModel.completeQuiz(userId, category) },
-                    enabled = selectedAnswers.all { it.value.isNotEmpty() }
-                ) {
-                    Text("Finish Quiz")
+                // On last question and all questions answered - show Finish button
+                allQuestionsAnswered -> {
+                    Button(
+                        onClick = { viewModel.completeQuiz(userId, category) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Finalizar Quiz")
+                    }
+                }
+                // On last question but not all answered - show disabled finish button with message
+                else -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Button(
+                            onClick = { },
+                            enabled = false
+                        ) {
+                            Text("Finalizar Quiz")
+                        }
+                        Text(
+                            text = "Responda todas as perguntas",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         }
@@ -222,22 +253,24 @@ fun QuizResultScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Quiz Completed!",
+            text = "Quiz Finalizado!",
             style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
         Card(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Your Score",
+                    text = "Sua Pontuação",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -247,7 +280,8 @@ fun QuizResultScreen(
                 Text(
                     text = "${result.correctAnswers} / ${result.totalQuestions}",
                     style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -256,8 +290,15 @@ fun QuizResultScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Accuracy:")
-                    Text("${result.accuracy.toInt()}%")
+                    Text(
+                        text = "Precisão:",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "${result.accuracy.toInt()}%",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -266,8 +307,15 @@ fun QuizResultScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Points:")
-                    Text("${result.totalPoints}")
+                    Text(
+                        text = "Pontos:",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "${result.totalPoints}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -276,30 +324,46 @@ fun QuizResultScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Time:")
-                    Text("${result.timeSpent}s")
+                    Text(
+                        text = "Tempo:",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "${result.timeSpent}s",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Row(
+        // Buttons
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedButton(
-                onClick = onRetakeQuiz,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Retake Quiz")
-            }
-
             Button(
                 onClick = onNavigateBack,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
-                Text("Back to Home")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back to Home"
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Voltar ao Menu Principal")
+            }
+            
+            OutlinedButton(
+                onClick = onRetakeQuiz,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Refazer Quiz")
             }
         }
     }

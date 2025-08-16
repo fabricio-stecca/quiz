@@ -20,7 +20,8 @@ data class QuizUiState(
     val isLoading: Boolean = false,
     val isQuizCompleted: Boolean = false,
     val timeRemaining: Int = 300, // 5 minutes in seconds
-    val score: QuizScore? = null
+    val score: QuizScore? = null,
+    val startTime: Long = 0L // Timestamp do início do quiz
 )
 
 data class QuizScore(
@@ -47,7 +48,8 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
                 val questions = questionRepository.getQuestionsByCategory(category)
                 _uiState.value = _uiState.value.copy(
                     questions = questions,
-                    isLoading = false
+                    isLoading = false,
+                    startTime = System.currentTimeMillis() // Registra o tempo de início
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
@@ -102,7 +104,14 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
                 (correctCount.toDouble() / questions.size) * 100
             } else 0.0
             
-            val timeSpent = 300 - state.timeRemaining // 5 minutes - remaining time
+            // Calcular tempo real gasto (em segundos)
+            val currentTime = System.currentTimeMillis()
+            val timeSpent = if (state.startTime > 0) {
+                ((currentTime - state.startTime) / 1000).toInt() // Converte para segundos
+            } else {
+                0
+            }
+            
             val totalPoints = calculatePoints(correctCount, questions.size, timeSpent)
             
             val score = QuizScore(
@@ -136,7 +145,12 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun calculatePoints(correct: Int, total: Int, timeSpent: Int): Int {
         val basePoints = correct * 10
-        val timeBonus = maxOf(0, (300 - timeSpent) / 10) // Bonus for speed
+        // Bonus por velocidade: máximo 5 pontos por pergunta se feito em menos de 30s por pergunta
+        val avgTimePerQuestion = if (total > 0) timeSpent / total else timeSpent
+        val timeBonus = if (avgTimePerQuestion < 30) {
+            val bonus = (30 - avgTimePerQuestion) / 6 // 0-5 pontos de bonus
+            (bonus * correct).coerceAtLeast(0)
+        } else 0
         return basePoints + timeBonus
     }
 

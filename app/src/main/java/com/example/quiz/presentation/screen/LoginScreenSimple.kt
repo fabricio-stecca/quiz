@@ -67,7 +67,7 @@ fun LoginScreen(
                 password = it
                 viewModel.clearError()
             },
-            label = { Text("Password") },
+            label = { Text("Senha") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
@@ -101,14 +101,14 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Login")
+                Text("Entrar")
             }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
         
         TextButton(onClick = onNavigateToSignUp) {
-            Text("Don't have an account? Sign up")
+            Text("Não tem uma conta? Criar conta")
         }
     }
 }

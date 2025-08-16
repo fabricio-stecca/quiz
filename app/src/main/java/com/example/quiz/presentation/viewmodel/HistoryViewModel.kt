@@ -28,13 +28,13 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _isLoading.value = true
             
-            // Load sessions
+            // Load sessions (já ordenadas pelo repositório)
             sessionRepository.getUserSessionsFlow(userId).collect { sessionList ->
                 _sessions.value = sessionList
             }
             
             // Load stats
-            sessionRepository.getUserStatsFlow(userId).collect { sessionStats ->
+            sessionRepository.getUserStats(userId).collect { sessionStats ->
                 _stats.value = sessionStats
             }
             

@@ -50,6 +50,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         id = document.id,
                         name = document.getString("name") ?: "",
                         email = document.getString("email") ?: "",
+                        nickname = document.getString("nickname") ?: "",
                         totalQuizzes = document.getLong("totalQuizzes")?.toInt() ?: 0,
                         totalPoints = document.getLong("totalPoints")?.toInt() ?: 0,
                         averageAccuracy = document.getDouble("averageAccuracy") ?: 0.0
@@ -75,31 +76,31 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun signUp(name: String, email: String, password: String, confirmPassword: String) {
-        if (name.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+    fun signUp(name: String, email: String, nickname: String, password: String, confirmPassword: String) {
+        if (name.isBlank() || email.isBlank() || nickname.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
             _authState.value = _authState.value.copy(
-                errorMessage = "Please fill in all fields"
+                errorMessage = "Por favor, preencha todos os campos"
             )
             return
         }
 
         if (password != confirmPassword) {
             _authState.value = _authState.value.copy(
-                errorMessage = "Passwords do not match"
+                errorMessage = "As senhas não coincidem"
             )
             return
         }
 
         if (password.length < 6) {
             _authState.value = _authState.value.copy(
-                errorMessage = "Password must be at least 6 characters long"
+                errorMessage = "A senha deve ter pelo menos 6 caracteres"
             )
             return
         }
 
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             _authState.value = _authState.value.copy(
-                errorMessage = "Please enter a valid email address"
+                errorMessage = "Por favor, insira um email válido"
             )
             return
         }
@@ -108,16 +109,30 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _authState.value = _authState.value.copy(isLoading = true, errorMessage = null)
             
             try {
-                // Verifica se usuário já existe no Firestore
-                val existingUsers = usersCollection
+                // Verifica se email já existe
+                val existingEmails = usersCollection
                     .whereEqualTo("email", email)
                     .get()
                     .await()
                 
-                if (!existingUsers.isEmpty) {
+                if (!existingEmails.isEmpty) {
                     _authState.value = _authState.value.copy(
                         isLoading = false,
-                        errorMessage = "User already exists. Please login instead."
+                        errorMessage = "Email já está em uso. Faça login."
+                    )
+                    return@launch
+                }
+
+                // Verifica se nickname já existe
+                val existingNicknames = usersCollection
+                    .whereEqualTo("nickname", nickname)
+                    .get()
+                    .await()
+                
+                if (!existingNicknames.isEmpty) {
+                    _authState.value = _authState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Apelido já está em uso. Escolha outro."
                     )
                     return@launch
                 }
@@ -126,6 +141,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 val userData = hashMapOf(
                     "name" to name,
                     "email" to email,
+                    "nickname" to nickname,
                     "totalQuizzes" to 0,
                     "totalPoints" to 0,
                     "averageAccuracy" to 0.0,
@@ -137,7 +153,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 val newUser = User(
                     id = documentRef.id,
                     name = name,
-                    email = email
+                    email = email,
+                    nickname = nickname
                 )
                 
                 _authState.value = _authState.value.copy(
@@ -148,7 +165,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 _authState.value = _authState.value.copy(
                     isLoading = false,
-                    errorMessage = "Sign up failed: ${e.message}"
+                    errorMessage = "Erro ao criar conta: ${e.message}"
                 )
             }
         }

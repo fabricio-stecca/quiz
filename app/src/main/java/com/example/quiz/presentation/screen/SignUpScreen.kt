@@ -20,6 +20,7 @@ fun SignUpScreen(
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var nickname by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
@@ -42,7 +43,7 @@ fun SignUpScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Create Account",
+            text = "Criar Conta",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
@@ -52,7 +53,7 @@ fun SignUpScreen(
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Full Name") },
+            label = { Text("Nome Completo") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -70,9 +71,20 @@ fun SignUpScreen(
         Spacer(modifier = Modifier.height(16.dp))
         
         OutlinedTextField(
+            value = nickname,
+            onValueChange = { nickname = it },
+            label = { Text("Apelido (único)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            supportingText = { Text("Este será seu nome no ranking") }
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text("Senha") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation()
@@ -83,7 +95,7 @@ fun SignUpScreen(
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
-            label = { Text("Confirm Password") },
+            label = { Text("Confirmar Senha") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation()
@@ -107,7 +119,7 @@ fun SignUpScreen(
         
         Button(
             onClick = {
-                viewModel.signUp(name, email, password, confirmPassword)
+                viewModel.signUp(name, email, nickname, password, confirmPassword)
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !authState.isLoading
@@ -118,14 +130,14 @@ fun SignUpScreen(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Sign Up")
+                Text("Criar Conta")
             }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
         
         TextButton(onClick = onNavigateToLogin) {
-            Text("Already have an account? Login")
+            Text("Já tem uma conta? Fazer login")
         }
     }
 }

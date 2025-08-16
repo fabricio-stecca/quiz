@@ -9,6 +9,7 @@ data class User(
     val id: String,
     val name: String,
     val email: String,
+    val nickname: String,
     val totalQuizzes: Int = 0,
     val totalPoints: Int = 0,
     val averageAccuracy: Double = 0.0
