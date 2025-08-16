@@ -39,7 +39,7 @@ fun HomeScreen(
         // Header with refresh button
         // Header
         Text(
-            text = "Quiz Categories",
+            text = "Quizes",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )

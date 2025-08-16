@@ -15,7 +15,7 @@ import com.example.quiz.presentation.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(
     onNavigateToSignUp: () -> Unit,
-    onLoginSuccess: (String) -> Unit,
+    onLoginSuccess: (com.example.quiz.data.model.User) -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
@@ -27,7 +27,7 @@ fun LoginScreen(
         if (authState.isLoggedIn) {
             val currentUser = authState.currentUser
             if (currentUser != null) {
-                onLoginSuccess(currentUser.id)
+                onLoginSuccess(currentUser)
             }
         }
     }

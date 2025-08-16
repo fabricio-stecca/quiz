@@ -10,7 +10,10 @@ data class User(
     val name: String,
     val email: String,
     val nickname: String,
+    val role: String = "user", // "user" ou "admin"
     val totalQuizzes: Int = 0,
     val totalPoints: Int = 0,
     val averageAccuracy: Double = 0.0
-)
+) {
+    fun isAdmin(): Boolean = role == "admin"
+}

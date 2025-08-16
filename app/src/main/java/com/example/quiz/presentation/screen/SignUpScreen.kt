@@ -15,7 +15,6 @@ import com.example.quiz.presentation.viewmodel.AuthViewModel
 @Composable
 fun SignUpScreen(
     onNavigateToLogin: () -> Unit,
-    onSignUpSuccess: (String) -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
     var name by remember { mutableStateOf("") }
@@ -26,12 +25,10 @@ fun SignUpScreen(
 
     val authState by viewModel.authState.collectAsState()
 
-    LaunchedEffect(authState.isLoggedIn) {
-        if (authState.isLoggedIn) {
-            val currentUser = authState.currentUser
-            if (currentUser != null) {
-                onSignUpSuccess(currentUser.id)
-            }
+    LaunchedEffect(authState.accountCreated) {
+        if (authState.accountCreated) {
+            viewModel.clearAccountCreated()
+            onNavigateToLogin()
         }
     }
 
@@ -116,19 +113,35 @@ fun SignUpScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
+
+        if (authState.accountCreated) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Text(
+                    text = "✅ Conta criada com sucesso! Redirecionando para login...",
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         
         Button(
             onClick = {
                 viewModel.signUp(name, email, nickname, password, confirmPassword)
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !authState.isLoading
+            enabled = !authState.isLoading && !authState.accountCreated
         ) {
             if (authState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     color = MaterialTheme.colorScheme.onPrimary
                 )
+            } else if (authState.accountCreated) {
+                Text("Conta Criada ✅")
             } else {
                 Text("Criar Conta")
             }

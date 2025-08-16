@@ -23,11 +23,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         loadCategories()
-        // Adiciona perguntas de exemplo se não existirem
-        viewModelScope.launch {
-            questionRepository.addSampleQuestions()
-            questionRepository.addQuizBrasil() // Adiciona o quiz específico do Brasil
-        }
     }
 
     private fun loadCategories() {

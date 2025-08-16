@@ -12,8 +12,15 @@ class FirestoreQuestionRepository {
 
     suspend fun getQuestionsByCategory(category: String): List<Question> {
         return try {
+            // Converter nome da categoria para ID do documento
+            val categoryId = category.lowercase()
+                .replace(" ", "_")
+                .replace(Regex("[^a-z0-9_]"), "")
+            
+            // Buscar questões da sub-coleção
             val querySnapshot = questionsCollection
-                .whereEqualTo("category", category)
+                .document(categoryId)
+                .collection("perguntas")
                 .get()
                 .await()
 
@@ -21,10 +28,10 @@ class FirestoreQuestionRepository {
                 try {
                     Question(
                         id = document.id,
-                        questionText = document.getString("question") ?: "",
+                        questionText = document.getString("questionText") ?: "",
                         options = (document.get("options") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-                        correctAnswer = (document.getLong("correctAnswerIndex") ?: 0).toInt(),
-                        category = document.getString("category") ?: "",
+                        correctAnswer = (document.getLong("correctAnswer") ?: 0).toInt(),
+                        category = document.getString("category") ?: category,
                         difficulty = document.getString("difficulty") ?: "medium"
                     )
                 } catch (e: Exception) {
@@ -38,9 +45,18 @@ class FirestoreQuestionRepository {
 
     fun getAllCategoriesFlow(): Flow<List<String>> = flow {
         try {
+            // Buscar documentos da coleção questions (que são as categorias)
             val querySnapshot = questionsCollection.get().await()
             val categories = querySnapshot.documents
-                .mapNotNull { it.getString("category") }
+                .mapNotNull { doc ->
+                    // Verificar se o documento tem sub-coleção de perguntas
+                    val categoryId = doc.id
+                    val categoryName = doc.getString("name") ?: categoryId.replace("_", " ")
+                        .split(" ")
+                        .joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
+                    categoryName
+                }
+                .filter { it.isNotBlank() }
                 .distinct()
             emit(categories)
         } catch (e: Exception) {

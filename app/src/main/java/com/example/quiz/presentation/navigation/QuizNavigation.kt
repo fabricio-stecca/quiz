@@ -20,9 +20,15 @@ fun QuizNavigation(
                 onNavigateToSignUp = {
                     navController.navigate("signup")
                 },
-                onLoginSuccess = { userId ->
-                    navController.navigate("home/$userId") {
-                        popUpTo("login") { inclusive = true }
+                onLoginSuccess = { user ->
+                    if (user.isAdmin()) {
+                        navController.navigate("admin") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate("home/${user.id}") {
+                            popUpTo("login") { inclusive = true }
+                        }
                     }
                 }
             )
@@ -32,12 +38,6 @@ fun QuizNavigation(
             SignUpScreen(
                 onNavigateToLogin = {
                     navController.popBackStack()
-                },
-                onSignUpSuccess = { userId ->
-                    navController.navigate("home/$userId") {
-                        popUpTo("signup") { inclusive = true }
-                        popUpTo("login") { inclusive = true }
-                    }
                 }
             )
         }
@@ -106,6 +106,17 @@ fun QuizNavigation(
                 userId = userId,
                 onNavigateBack = {
                     navController.popBackStack()
+                }
+            )
+        }
+
+        composable("admin") {
+            AdminScreen(
+                onNavigateBack = {
+                    // Como admin não tem tela anterior, fazer logout
+                    navController.navigate("login") {
+                        popUpTo("login") { inclusive = true }
+                    }
                 }
             )
         }

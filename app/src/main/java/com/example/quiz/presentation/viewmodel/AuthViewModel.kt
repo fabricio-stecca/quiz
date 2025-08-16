@@ -14,6 +14,7 @@ import kotlinx.coroutines.tasks.await
 data class AuthState(
     val isLoading: Boolean = false,
     val isLoggedIn: Boolean = false,
+    val accountCreated: Boolean = false,
     val currentUser: User? = null,
     val errorMessage: String? = null
 )
@@ -29,13 +30,31 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun login(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {
             _authState.value = _authState.value.copy(
-                errorMessage = "Please fill in all fields"
+                errorMessage = "Por favor, preencha todos os campos"
             )
             return
         }
 
         viewModelScope.launch {
             _authState.value = _authState.value.copy(isLoading = true, errorMessage = null)
+            
+            // Verificar se é login de administrador
+            if (email == "cccc@gmail.com" && password == "123456") {
+                val adminUser = User(
+                    id = "admin_user",
+                    name = "Administrador",
+                    email = "cccc@gmail.com",
+                    nickname = "Admin",
+                    role = "admin"
+                )
+                
+                _authState.value = _authState.value.copy(
+                    isLoading = false,
+                    isLoggedIn = true,
+                    currentUser = adminUser
+                )
+                return@launch
+            }
             
             try {
                 // Busca usuário no Firestore por email
@@ -51,6 +70,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         name = document.getString("name") ?: "",
                         email = document.getString("email") ?: "",
                         nickname = document.getString("nickname") ?: "",
+                        role = document.getString("role") ?: "user",
                         totalQuizzes = document.getLong("totalQuizzes")?.toInt() ?: 0,
                         totalPoints = document.getLong("totalPoints")?.toInt() ?: 0,
                         averageAccuracy = document.getDouble("averageAccuracy") ?: 0.0
@@ -142,6 +162,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     "name" to name,
                     "email" to email,
                     "nickname" to nickname,
+                    "role" to "user", // Usuários normais sempre têm role "user"
                     "totalQuizzes" to 0,
                     "totalPoints" to 0,
                     "averageAccuracy" to 0.0,
@@ -159,8 +180,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 
                 _authState.value = _authState.value.copy(
                     isLoading = false,
-                    isLoggedIn = true,
-                    currentUser = newUser
+                    accountCreated = true,
+                    isLoggedIn = false,
+                    currentUser = null
                 )
             } catch (e: Exception) {
                 _authState.value = _authState.value.copy(
@@ -173,6 +195,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearError() {
         _authState.value = _authState.value.copy(errorMessage = null)
+    }
+
+    fun clearAccountCreated() {
+        _authState.value = _authState.value.copy(accountCreated = false)
     }
 
     fun logout() {
