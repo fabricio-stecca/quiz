@@ -38,23 +38,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _authState.value = _authState.value.copy(isLoading = true, errorMessage = null)
             
-            // Verificar se é login de administrador
-            if (email == "cccc@gmail.com" && password == "123456") {
-                val adminUser = User(
-                    id = "admin_user",
-                    name = "Administrador",
-                    email = "cccc@gmail.com",
-                    nickname = "Admin",
-                    role = "admin"
-                )
-                
-                _authState.value = _authState.value.copy(
-                    isLoading = false,
-                    isLoggedIn = true,
-                    currentUser = adminUser
-                )
-                return@launch
-            }
+            // Removido hardcode de admin; validação agora somente via Firestore
             
             try {
                 // Busca usuário no Firestore por email

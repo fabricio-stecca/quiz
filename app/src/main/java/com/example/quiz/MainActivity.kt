@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
         
         // Inicializar questões no Firestore
         initializeQuestions()
+
         
         setContent {
             QuizTheme {
