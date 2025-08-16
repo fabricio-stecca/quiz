@@ -1,6 +1,12 @@
 package com.example.quiz.presentation.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -19,193 +25,9 @@ import com.example.quiz.presentation.viewmodel.RankingViewModel
 import com.example.quiz.presentation.viewmodel.RankingType
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.example.quiz.ui.theme.GradientStart
+import com.example.quiz.ui.theme.GradientEnd
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun HistoryScreen(
-    userId: String,
-    onNavigateBack: () -> Unit,
-    viewModel: HistoryViewModel = viewModel()
-) {
-    val sessions by viewModel.sessions.collectAsState()
-    val stats by viewModel.stats.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-
-    LaunchedEffect(userId) {
-        viewModel.loadUserHistory(userId)
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
-                )
-            }
-            Text(
-                text = "Histórico de Quizzes",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Stats Card
-        stats?.let { sessionStats ->
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "Estatísticas Gerais",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Total de Quizzes:")
-                        Text("${sessionStats.totalSessions}")
-                    }
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Precisão Média:")
-                        Text("${sessionStats.averageAccuracy.toInt()}%")
-                    }
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Total de Pontos:")
-                        Text("${sessionStats.totalPoints}")
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else if (sessions.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Nenhum quiz foi realizado ainda",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else {
-            // Título da lista
-            Text(
-                text = "Últimos 10 Quizzes",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(sessions.take(10)) { session ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = session.category,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                                        .format(session.completedAt),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            // Score com visual melhorado
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Pontuação: ${session.correctAnswers}/${session.totalQuestions}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
-                                    text = "${session.accuracy.toInt()}%",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = when {
-                                        session.accuracy >= 80 -> MaterialTheme.colorScheme.primary
-                                        session.accuracy >= 60 -> MaterialTheme.colorScheme.secondary
-                                        else -> MaterialTheme.colorScheme.error
-                                    }
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(4.dp))
-                            
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Pontos: ${session.totalPoints}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
-                                    text = "Tempo: ${session.timeSpentSeconds}s",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -217,85 +39,105 @@ fun RankingScreen(
     val selectedRankingType by viewModel.selectedRankingType.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    val sortedUsers = remember(userRankings, selectedRankingType) {
+        when (selectedRankingType) {
+            RankingType.POINTS -> userRankings.sortedByDescending { it.totalPoints }
+            RankingType.QUESTIONS -> userRankings.sortedByDescending { it.totalQuestions }
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.loadRankings()
     }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .imePadding()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
-                )
-            }
-            Text(
-                text = "Ranking",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Abas funcionais para selecionar tipo de ranking
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FilterChip(
-                onClick = { viewModel.selectRankingType(RankingType.POINTS) },
-                label = { Text("Maior Pontuação") },
-                selected = selectedRankingType == RankingType.POINTS,
-                modifier = Modifier.weight(1f)
-            )
-            FilterChip(
-                onClick = { viewModel.selectRankingType(RankingType.QUESTIONS) },
-                label = { Text("Mais Perguntas") },
-                selected = selectedRankingType == RankingType.QUESTIONS,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                CircularProgressIndicator()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Voltar"
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "Ranking",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Top jogadores e desempenho",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
             }
-        } else {
-            // Ordenar usuários baseado no tipo selecionado
-            val sortedUsers = when (selectedRankingType) {
-                RankingType.POINTS -> userRankings.sortedByDescending { it.totalPoints }
-                RankingType.QUESTIONS -> userRankings.sortedByDescending { it.totalQuestions }
+        }
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    FilterChip(
+                        onClick = { viewModel.selectRankingType(RankingType.POINTS) },
+                        label = { Text("Maior Pontuação") },
+                        selected = selectedRankingType == RankingType.POINTS,
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        onClick = { viewModel.selectRankingType(RankingType.QUESTIONS) },
+                        label = { Text("Mais Perguntas") },
+                        selected = selectedRankingType == RankingType.QUESTIONS,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
-
+        }
+        item {
             Text(
-                text = when (selectedRankingType) {
-                    RankingType.POINTS -> "🏆 Top Pontuação"
-                    RankingType.QUESTIONS -> "📊 Mais Perguntas Respondidas"
-                },
-                style = MaterialTheme.typography.titleLarge,
+                text = "Tabela Geral",
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
+                color = MaterialTheme.colorScheme.surface
             )
-
-            if (sortedUsers.isEmpty()) {
+        }
+        if (sortedUsers.isEmpty()) {
+            item {
                 Card(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
@@ -303,119 +145,83 @@ fun RankingScreen(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        
                         Spacer(modifier = Modifier.height(8.dp))
-                        
                         Text(
                             text = "Faça alguns quizzes para aparecer no ranking!",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 }
-            } else {
-                // Lista de rankings com dados reais
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            }
+        } else {
+            itemsIndexed(sortedUsers.take(10)) { index, userRanking ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (index < 3) 10.dp else 4.dp
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 ) {
-                    itemsIndexed(sortedUsers.take(10)) { index, userRanking ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(
-                                defaultElevation = if (index < 3) 6.dp else 2.dp
-                            ),
-                            colors = CardDefaults.cardColors(
-                                containerColor = when (index) {
-                                    0 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                    1 -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
-                                    2 -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
-                                    else -> MaterialTheme.colorScheme.surface
-                                }
-                            )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = when (index) {
-                                            0 -> "🥇"
-                                            1 -> "🥈"
-                                            2 -> "🥉"
-                                            else -> "${index + 1}º"
-                                        },
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.width(50.dp)
-                                    )
-                                    
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    
-                                    Column {
-                                        Text(
-                                            text = userRanking.nickname,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = "${userRanking.totalQuizzes} quizzes • ${userRanking.averageAccuracy.toInt()}% precisão",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                                
+                            Text(
+                                text = when (index) {
+                                    0 -> "🥇"
+                                    1 -> "🥈"
+                                    2 -> "🥉"
+                                    else -> "${index + 1}º"
+                                },
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.width(50.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
                                 Text(
-                                    text = when (selectedRankingType) {
-                                        RankingType.POINTS -> "${userRanking.totalPoints} pts"
-                                        RankingType.QUESTIONS -> "${userRanking.totalQuestions} perguntas"
-                                    },
+                                    text = userRanking.nickname,
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "${userRanking.totalQuizzes} quizzes • ${userRanking.averageAccuracy.toInt()}% precisão",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            Text(
+                                text = "${userRanking.totalPoints} pts",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            // Removed average time (property not available)
                         }
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
+        item {
+            Text(
+                text = "Ranking atualizado automaticamente a cada sessão concluída.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
             )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "ℹ️ Sistema de Ranking",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "O ranking será atualizado automaticamente baseado nos quizzes realizados. Continue fazendo quizzes para melhorar sua posição!",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
         }
     }
 }
@@ -437,6 +243,8 @@ fun DashboardScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .imePadding()
             .padding(16.dp)
     ) {
         Row(

@@ -9,7 +9,7 @@ import com.example.quiz.presentation.screen.*
 import com.example.quiz.presentation.navigation.NavigationDebounce.popBackStackDebounced
 
 @Composable
-fun QuizNavigation(
+fun QuizNavigationNew(
     navController: NavHostController = rememberNavController()
 ) {
     NavHost(

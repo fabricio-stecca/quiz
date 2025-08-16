@@ -80,6 +80,15 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Função de compatibilidade
+    fun previousQuestion() = goToPreviousQuestion()
+    
+    // Função de compatibilidade
+    fun nextQuestion() = goToNextQuestion()
+    
+    // Função de compatibilidade
+    fun finishQuiz(userId: String, category: String) = completeQuiz(userId, category)
+
     fun updateTimer(newTime: Int) {
         _uiState.value = _uiState.value.copy(timeRemaining = newTime)
     }

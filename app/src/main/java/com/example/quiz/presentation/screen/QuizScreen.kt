@@ -1,18 +1,40 @@
 package com.example.quiz.presentation.screen
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.quiz.presentation.viewmodel.QuizViewModel
+import com.example.quiz.ui.theme.*
+import kotlinx.coroutines.delay
 
 data class QuizResult(
     val correctAnswers: Int,
@@ -51,12 +73,7 @@ fun QuizScreen(
     }
 
     if (questions.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
+        LoadingScreen()
         return
     }
 
@@ -78,162 +95,402 @@ fun QuizScreen(
         return
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(GradientStart, GradientEnd)
+                )
+            )
     ) {
-        // Top Bar with Exit Button
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp)
         ) {
-            // Exit Button
-            OutlinedButton(
-                onClick = onNavigateBack,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Exit Quiz"
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Sair")
-            }
-
-            // Progress indicator
-            Text(
-                text = "${currentQuestionIndex + 1} / ${questions.size}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = category,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Question
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = currentQuestion.questionText,
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Answer options
-        val selectedAnswersList = selectedAnswers[currentQuestionIndex] ?: emptyList()
-
-        currentQuestion.options.forEachIndexed { index, option ->
-            Card(
+            // Área rolável (header + pergunta)
+            Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                onClick = { 
-                    viewModel.selectAnswer(currentQuestionIndex, listOf(option))
-                },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (selectedAnswersList.contains(option)) 
-                        MaterialTheme.colorScheme.primaryContainer 
-                    else 
-                        MaterialTheme.colorScheme.surface
-                )
+                    .verticalScroll(rememberScrollState()),
             ) {
+                QuizHeader(
+                    category = category,
+                    currentQuestion = currentQuestionIndex + 1,
+                    totalQuestions = questions.size,
+                    onNavigateBack = onNavigateBack
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                QuestionCard(
+                    question = currentQuestion,
+                    selectedAnswerIndex = selectedAnswers[currentQuestionIndex]?.firstOrNull()?.let { selectedText ->
+                        currentQuestion.options.indexOf(selectedText).takeIf { it >= 0 }
+                    },
+                    onAnswerSelected = { answerIdx ->
+                        val answerText = currentQuestion.options.getOrNull(answerIdx)
+                        if (answerText != null) {
+                            viewModel.selectAnswer(currentQuestionIndex, listOf(answerText))
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Navegação (fixada na parte inferior)
+            QuizNavigation(
+                currentQuestion = currentQuestionIndex + 1,
+                totalQuestions = questions.size,
+                hasSelectedAnswer = !selectedAnswers[currentQuestionIndex].isNullOrEmpty(),
+                onPrevious = { viewModel.goToPreviousQuestion() },
+                onNext = { viewModel.goToNextQuestion() },
+                onFinish = { viewModel.completeQuiz(userId, category) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoadingScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(GradientStart, GradientEnd)
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(64.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 6.dp
+                )
+                Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "${('A' + index)} $option",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "Carregando perguntas...",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Navigation buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+@Composable
+private fun QuizHeader(
+    category: String,
+    currentQuestion: Int,
+    totalQuestions: Int,
+    onNavigateBack: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
         ) {
-            // Previous button
-            if (currentQuestionIndex > 0) {
-                OutlinedButton(
-                    onClick = { viewModel.goToPreviousQuestion() }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = onNavigateBack,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Previous"
+                        contentDescription = "Voltar",
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Anterior")
                 }
+                
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = category.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Pergunta $currentQuestion de $totalQuestions",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Barra de progresso animada
+            val progress by animateFloatAsState(
+                targetValue = currentQuestion.toFloat() / totalQuestions.toFloat(),
+                animationSpec = tween(durationMillis = 300, easing = LinearEasing),
+                label = "progress"
+            )
+            
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = SuccessGreen,
+                trackColor = NeutralGray200,
+            )
+        }
+    }
+}
+
+@Composable
+private fun QuestionCard(
+    question: com.example.quiz.data.model.Question,
+    selectedAnswerIndex: Int?,
+    onAnswerSelected: (Int) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(AccentOrange40, AccentOrange80)
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "${question.points} pontos",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = AccentOrange40
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            Text(
+                text = question.questionText,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                lineHeight = MaterialTheme.typography.headlineSmall.lineHeight * 1.2
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Opções de resposta
+            question.options.forEachIndexed { index, option ->
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                AnswerOptionCard(
+                    option = option,
+                    isSelected = selectedAnswerIndex == index,
+                    onClick = { onAnswerSelected(index) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnswerOptionCard(
+    option: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 8.dp else 4.dp
+        ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                PrimaryBlue40.copy(alpha = 0.1f)
             } else {
-                Spacer(modifier = Modifier.width(1.dp))
+                MaterialTheme.colorScheme.surfaceVariant
             }
-
-            // Check if all questions are answered
-            val allQuestionsAnswered = (0 until questions.size).all { questionIndex ->
-                selectedAnswers[questionIndex]?.isNotEmpty() == true
+        ),
+        border = if (isSelected) {
+            ButtonDefaults.outlinedButtonBorder.copy(
+                width = 2.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(PrimaryBlue40, SecondaryTeal40)
+                )
+            )
+        } else null
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AnimatedVisibility(
+                visible = isSelected,
+                enter = scaleIn() + fadeIn(),
+                exit = scaleOut() + fadeOut()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = PrimaryBlue40,
+                    modifier = Modifier.size(24.dp)
+                )
             }
+            if (isSelected) {
+                Spacer(modifier = Modifier.width(12.dp))
+            }
+            Text(
+                text = option,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                color = if (isSelected) PrimaryBlue40 else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
-            // Next/Finish button logic
-            when {
-                // Not on last question - show Next button
-                currentQuestionIndex < questions.size - 1 -> {
-                    Button(
-                        onClick = { viewModel.goToNextQuestion() },
-                        enabled = selectedAnswers[currentQuestionIndex]?.isNotEmpty() == true
-                    ) {
-                        Text("Próxima")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Next"
+@Composable
+private fun QuizNavigation(
+    currentQuestion: Int,
+    totalQuestions: Int,
+    hasSelectedAnswer: Boolean,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onFinish: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Botão Anterior
+        if (currentQuestion > 1) {
+            OutlinedButton(
+                onClick = onPrevious,
+                modifier = Modifier.weight(1f).height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.surface
+                ),
+                border = ButtonDefaults.outlinedButtonBorder.copy(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
                         )
-                    }
-                }
-                // On last question and all questions answered - show Finish button
-                allQuestionsAnswered -> {
-                    Button(
-                        onClick = { viewModel.completeQuiz(userId, category) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Text("Finalizar Quiz")
-                    }
-                }
-                // On last question but not all answered - show disabled finish button with message
-                else -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Button(
-                            onClick = { },
-                            enabled = false
-                        ) {
-                            Text("Finalizar Quiz")
-                        }
-                        Text(
-                            text = "Responda todas as perguntas",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
+                    ),
+                    width = 2.dp
+                )
+            ) {
+                Text(
+                    text = "Anterior",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
+        }
+        
+        // Botão Próximo/Finalizar
+        if (currentQuestion < totalQuestions) {
+            Button(
+                onClick = onNext,
+                enabled = hasSelectedAnswer,
+                modifier = Modifier.weight(1f).height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (hasSelectedAnswer) SuccessGreen else NeutralGray300,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = "Próxima",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        } else {
+            Button(
+                onClick = onFinish,
+                enabled = hasSelectedAnswer,
+                modifier = Modifier.weight(1f).height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (hasSelectedAnswer) AccentOrange40 else NeutralGray300,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = "Finalizar",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -245,126 +502,181 @@ fun QuizResultScreen(
     onNavigateBack: () -> Unit,
     onRetakeQuiz: () -> Unit
 ) {
-    Column(
+    val accuracy = result.accuracy
+    val statusColor = when {
+        accuracy >= 80 -> SuccessGreen
+        accuracy >= 60 -> AccentOrange40
+        else -> ErrorRed
+    }
+    
+    val statusMessage = when {
+        accuracy >= 80 -> "Excelente!"
+        accuracy >= 60 -> "Bom trabalho!"
+        else -> "Continue tentando!"
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(GradientStart, GradientEnd)
+                )
+            )
     ) {
-        Text(
-            text = "Quiz Finalizado!",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Card de resultado
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
-                Text(
-                    text = "Sua Pontuação",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "${result.correctAnswers} / ${result.totalQuestions}",
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Ícone de resultado
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(statusColor.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(40.dp),
+                            tint = statusColor
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
                     Text(
-                        text = "Precisão:",
-                        style = MaterialTheme.typography.bodyLarge
+                        text = statusMessage,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor
                     )
+                    
                     Text(
-                        text = "${result.accuracy.toInt()}%",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
+                        text = "Quiz Finalizado",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Pontos:",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Text(
-                        text = "${result.totalPoints}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Tempo:",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Text(
-                        text = "${result.timeSpent}s",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // Estatísticas
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        StatCard(
+                            title = "Pontuação",
+                            value = "${accuracy.toInt()}%",
+                            color = statusColor
+                        )
+                        StatCard(
+                            title = "Acertos",
+                            value = "${result.correctAnswers}/${result.totalQuestions}",
+                            color = SuccessGreen
+                        )
+                        StatCard(
+                            title = "Pontos",
+                            value = "${result.totalPoints}",
+                            color = AccentOrange40
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // Botões
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = onRetakeQuiz,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryBlue40
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Refazer Quiz",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        OutlinedButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                text = "Voltar ao Menu",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Buttons
+@Composable
+private fun StatCard(
+    title: String,
+    value: String,
+    color: androidx.compose.ui.graphics.Color
+) {
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.1f)
+        )
+    ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Button(
-                onClick = onNavigateBack,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back to Home"
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Voltar ao Menu Principal")
-            }
-            
-            OutlinedButton(
-                onClick = onRetakeQuiz,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Refazer Quiz")
-            }
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
         }
     }
 }

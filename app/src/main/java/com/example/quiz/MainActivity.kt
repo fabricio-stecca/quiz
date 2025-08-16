@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             QuizTheme {
+                // Usando a nova navegação com design moderno
                 QuizNavigation()
             }
         }
