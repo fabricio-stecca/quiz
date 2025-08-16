@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.quiz.presentation.viewmodel.HomeViewModel
 import com.example.quiz.ui.theme.*
@@ -55,52 +57,89 @@ fun HomeScreen(
         viewModel.loadCategories()
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
-                        GradientStart,
-                        GradientEnd
-                    )
+                    colors = listOf(GradientStart, GradientEnd)
                 )
             )
     ) {
-        Column(
+        val isCompact = maxWidth < 360.dp
+        val horizontalPadding = if (isCompact) 12.dp else 20.dp
+        val cardInternalPadding = if (isCompact) 16.dp else 24.dp
+        val quickActionHeight = if (isCompact) 88.dp else 100.dp
+        val quickActionsPerRow = if (maxWidth > 520.dp) 4 else 3
+
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .imePadding()
-                .padding(20.dp)
+                .padding(start = horizontalPadding, end = horizontalPadding, top = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (isCompact) 16.dp else 24.dp)
         ) {
-            // Header com design moderno
-            WelcomeHeader(
-                onRefresh = {
-                    isRefreshing = true
-                    viewModel.refreshCategories()
-                    isRefreshing = false
-                },
-                onSignOut = onSignOut,
-                isRefreshing = isRefreshing
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Menu de navegação rápida
-            QuickActionsRow(
-                onNavigateToHistory = onNavigateToHistory,
-                onNavigateToRanking = onNavigateToRanking,
-                onNavigateToDashboard = onNavigateToDashboard
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Seção de quizzes
-            QuizSection(
-                categories = categories,
-                isLoading = isLoading || isRefreshing,
-                onNavigateToQuiz = onNavigateToQuiz
-            )
+            item {
+                WelcomeHeader(
+                    onRefresh = {
+                        isRefreshing = true
+                        viewModel.refreshCategories()
+                        isRefreshing = false
+                    },
+                    onSignOut = onSignOut,
+                    isRefreshing = isRefreshing,
+                    contentPadding = cardInternalPadding
+                )
+            }
+            item {
+                QuickActionsAdaptive(
+                    onNavigateToHistory = onNavigateToHistory,
+                    onNavigateToRanking = onNavigateToRanking,
+                    onNavigateToDashboard = onNavigateToDashboard,
+                    itemHeight = quickActionHeight,
+                    columns = quickActionsPerRow,
+                    spacing = if (isCompact) 8.dp else 12.dp
+                )
+            }
+            // Quiz section (flattened to avoid nested LazyColumn)
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Quizzes Disponíveis",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                when {
+                    (isLoading || isRefreshing) -> {
+                        LoadingQuizzesCard()
+                    }
+                    categories.isEmpty() -> {
+                        EmptyStateCard()
+                    }
+                }
+            }
+            if (!(isLoading || isRefreshing) && categories.isNotEmpty()) {
+                items(categories) { category ->
+                    CategoryCard(
+                        category = category,
+                        onClick = { onNavigateToQuiz(category) }
+                    )
+                }
+            }
+            item { Spacer(modifier = Modifier.height(8.dp)) }
         }
     }
 }
@@ -109,7 +148,8 @@ fun HomeScreen(
 private fun WelcomeHeader(
     onRefresh: () -> Unit,
     onSignOut: () -> Unit,
-    isRefreshing: Boolean
+    isRefreshing: Boolean,
+    contentPadding: Dp = 24.dp
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -120,7 +160,7 @@ private fun WelcomeHeader(
         )
     ) {
         Column(
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier.padding(contentPadding)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -223,41 +263,46 @@ private fun WelcomeHeader(
 }
 
 @Composable
-private fun QuickActionsRow(
+private fun QuickActionsAdaptive(
     onNavigateToHistory: () -> Unit,
     onNavigateToRanking: () -> Unit,
-    onNavigateToDashboard: () -> Unit
+    onNavigateToDashboard: () -> Unit,
+    itemHeight: Dp,
+    columns: Int,
+    spacing: Dp
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        QuickActionCard(
-            icon = Icons.Default.History,
-            title = "Histórico",
-            subtitle = "Seus resultados",
-            colors = listOf(AccentOrange40, AccentOrange80),
-            onClick = onNavigateToHistory,
-            modifier = Modifier.weight(1f)
-        )
-        
-        QuickActionCard(
-            icon = Icons.Default.Leaderboard,
-            title = "Ranking",
-            subtitle = "Classificação",
-            colors = listOf(SuccessGreen, SecondaryTeal40),
-            onClick = onNavigateToRanking,
-            modifier = Modifier.weight(1f)
-        )
-        
-        QuickActionCard(
-            icon = Icons.Default.Star,
-            title = "Dashboard",
-            subtitle = "Estatísticas",
-            colors = listOf(PrimaryBlue40, SecondaryTeal40),
-            onClick = onNavigateToDashboard,
-            modifier = Modifier.weight(1f)
-        )
+    val actions = listOf(
+        Triple(Icons.Default.History, "Histórico" to "Seus", onNavigateToHistory),
+        Triple(Icons.Default.Leaderboard, "Ranking" to "Classificação", onNavigateToRanking),
+        Triple(Icons.Default.Star, "Dashboard" to "Estatísticas", onNavigateToDashboard)
+    )
+    // Simple flow layout
+    Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+        actions.chunked(columns).forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(spacing)
+            ) {
+                rowItems.forEach { (icon, titles, callback) ->
+                    QuickActionCard(
+                        icon = icon,
+                        title = titles.first,
+                        subtitle = titles.second,
+                        colors = when (icon) {
+                            Icons.Default.History -> listOf(AccentOrange40, AccentOrange80)
+                            Icons.Default.Leaderboard -> listOf(SuccessGreen, SecondaryTeal40)
+                            else -> listOf(PrimaryBlue40, SecondaryTeal40)
+                        },
+                        onClick = callback,
+                        modifier = Modifier.weight(1f),
+                        fixedHeight = itemHeight
+                    )
+                }
+                repeat(columns - rowItems.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
     }
 }
 
@@ -268,11 +313,14 @@ private fun QuickActionCard(
     subtitle: String,
     colors: List<androidx.compose.ui.graphics.Color>,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fixedHeight: Dp = 100.dp
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.height(100.dp),
+        modifier = modifier
+            .defaultMinSize(minHeight = 88.dp)
+            .wrapContentHeight(),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -282,13 +330,13 @@ private fun QuickActionCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(34.dp)
                     .clip(CircleShape)
                     .background(
                         brush = Brush.linearGradient(colors = colors)
@@ -298,7 +346,7 @@ private fun QuickActionCard(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -310,89 +358,50 @@ private fun QuickActionCard(
                     text = title,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2
                 )
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    maxLines = 2
                 )
             }
         }
     }
 }
 
+// Loading card extracted (was inside previous QuizSection) so we can reuse in flattened list
 @Composable
-private fun QuizSection(
-    categories: List<String>,
-    isLoading: Boolean,
-    onNavigateToQuiz: (String) -> Unit
-) {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+private fun LoadingQuizzesCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(48.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Quizzes Disponíveis",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        if (isLoading) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp),
+                    color = MaterialTheme.colorScheme.primary
                 )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(48.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(48.dp),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Carregando quizzes...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-            }
-        } else if (categories.isEmpty()) {
-            EmptyStateCard()
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(categories) { category ->
-                    CategoryCard(
-                        category = category,
-                        onClick = { onNavigateToQuiz(category) }
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Carregando quizzes...",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
             }
         }
     }
@@ -446,15 +455,17 @@ private fun CategoryCard(
                 
                 Column {
                     Text(
-                        text = category.replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                            text = category.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2
                     )
                     Text(
                         text = "Teste seus conhecimentos",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            maxLines = 2
                     )
                 }
             }
