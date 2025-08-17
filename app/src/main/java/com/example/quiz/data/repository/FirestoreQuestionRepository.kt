@@ -12,11 +12,17 @@ class FirestoreQuestionRepository {
 
     suspend fun getQuestionsByCategory(category: String): List<Question> {
         return try {
+            /*
+            Gemini - inicio
+            Esta dando errado  criar um ID de documento para o Firestore, palavras com acentos estam falhando na criação de um ID, como posso arrumar?
+             */
             // Converter nome da categoria para ID do documento
             val categoryId = category.lowercase()
                 .replace(" ", "_")
                 .replace(Regex("[^a-z0-9_]"), "")
-            
+            /*
+            Gemini - fim
+             */
             // Buscar questões da sub-coleção
             val querySnapshot = questionsCollection
                 .document(categoryId)
@@ -179,7 +185,15 @@ class FirestoreQuestionRepository {
                     "difficulty" to "medium"
                 )
             )
+            /*
+            Gemini - inicio
+           Pq nao esta adicionando o quiz no firestore , apenas alguns estão sendo salvos?
+           quizBrasil.forEach { questionData ->
+                questionsCollection.add(questionData)
+            }
 
+
+             */
             // Adiciona cada pergunta do quiz ao Firestore
             quizBrasil.forEach { questionData ->
                 questionsCollection.add(questionData).await()
@@ -187,5 +201,8 @@ class FirestoreQuestionRepository {
         } catch (e: Exception) {
             // Handle error silently
         }
+        /*
+        Gemini- final
+         */
     }
 }

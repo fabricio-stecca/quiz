@@ -46,7 +46,10 @@ class FirestoreQuizSessionRepository {
                 .whereEqualTo("userId", userId)
                 .get()
                 .await()
-
+            /*
+            ChatGPT- inicio
+            Esse erro esta aparecendo java.lang.ClassCastException: java.lang.Long cannot be cast to java.lang.Integer, oq poderia ser ?
+             */
             val sessions = querySnapshot.documents.mapNotNull { document ->
                 try {
                     val data = document.data ?: return@mapNotNull null
@@ -67,6 +70,9 @@ class FirestoreQuizSessionRepository {
                     null
                 }
             }
+            /*
+            ChatGPT - final
+             */
 
             // Ordenar por data decrescente (mais recentes primeiro)
             val sortedSessions = sessions.sortedByDescending { it.completedAt }

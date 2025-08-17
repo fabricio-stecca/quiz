@@ -42,6 +42,12 @@ fun QuizNavigation(
             )
         }
 
+        /*
+        ChatGPT- inicio
+        Esta dando esse erro como posso resolver ? java.lang.IllegalArgumentException: Navigation destination that matches request
+        NavDeepLinkRequest{ uri=android-app://androidx.navigation/quiz/category/userId }
+        cannot be found in the navigation graph.
+         */
         composable("home/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             
@@ -67,7 +73,9 @@ fun QuizNavigation(
                 }
             )
         }
-
+        /*
+        ChatGPT - final
+         */
         composable("quiz/{category}/{userId}") { backStackEntry ->
             val category = backStackEntry.arguments?.getString("category") ?: ""
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
