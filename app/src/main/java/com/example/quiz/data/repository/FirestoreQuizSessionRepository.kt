@@ -1,5 +1,6 @@
 package com.example.quiz.data.repository
 
+import android.util.Log
 import com.example.quiz.data.model.QuizSession
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -11,7 +12,16 @@ import java.util.Date
 data class SessionStats(
     val totalSessions: Int,
     val totalPoints: Int,
-    val averageAccuracy: Double
+    val averageAccuracy: Double,
+    val performanceData: List<QuizPerformance> = emptyList()
+)
+
+data class QuizPerformance(
+    val quizNumber: Int,
+    val accuracy: Double,
+    val points: Int,
+    val category: String,
+    val date: String
 )
 
 class FirestoreQuizSessionRepository {
@@ -84,12 +94,17 @@ class FirestoreQuizSessionRepository {
 
     suspend fun getUserStats(userId: String): Flow<SessionStats?> = flow {
         try {
+            Log.d("FirestoreRepository", "Getting stats for userId: $userId")
+            
             val userSessions = sessionsCollection
                 .whereEqualTo("userId", userId)
                 .get()
                 .await()
 
+            Log.d("FirestoreRepository", "Found ${userSessions.size()} sessions")
+
             if (userSessions.isEmpty) {
+                Log.d("FirestoreRepository", "No sessions found, emitting null")
                 emit(null)
                 return@flow
             }
@@ -99,16 +114,44 @@ class FirestoreQuizSessionRepository {
                 (it.getLong("totalPoints") ?: 0).toInt() 
             }
             
-            // Calculate average accuracy
-            val accuracies = userSessions.documents.mapNotNull { doc ->
+            Log.d("FirestoreRepository", "totalSessions: $totalSessions, totalPoints: $totalPoints")
+            
+            // Calculate average accuracy and performance data
+            val performanceData = mutableListOf<QuizPerformance>()
+            val accuracies = userSessions.documents.mapIndexedNotNull { index, doc ->
                 val correct = (doc.getLong("correctAnswers") ?: 0).toInt()
                 val total = (doc.getLong("totalQuestions") ?: 0).toInt()
-                if (total > 0) (correct.toDouble() / total) * 100 else null
+                val points = (doc.getLong("totalPoints") ?: 0).toInt()
+                val category = doc.getString("category") ?: "Unknown"
+                
+                Log.d("FirestoreRepository", "Session $index: correct=$correct, total=$total, points=$points, category=$category")
+                
+                if (total > 0) {
+                    val accuracy = (correct.toDouble() / total) * 100
+                    
+                    // Add to performance data
+                    performanceData.add(
+                        QuizPerformance(
+                            quizNumber = index + 1,
+                            accuracy = accuracy,
+                            points = points,
+                            category = category,
+                            date = "Quiz ${index + 1}"
+                        )
+                    )
+                    
+                    accuracy
+                } else null
             }
             val averageAccuracy = if (accuracies.isNotEmpty()) accuracies.average() else 0.0
 
-            emit(SessionStats(totalSessions, totalPoints, averageAccuracy))
+            Log.d("FirestoreRepository", "averageAccuracy: $averageAccuracy, performanceData size: ${performanceData.size}")
+
+            val stats = SessionStats(totalSessions, totalPoints, averageAccuracy, performanceData)
+            Log.d("FirestoreRepository", "Emitting stats: $stats")
+            emit(stats)
         } catch (e: Exception) {
+            Log.e("FirestoreRepository", "Error getting user stats", e)
             emit(null)
         }
     }
@@ -162,9 +205,6 @@ class FirestoreQuizSessionRepository {
                     val timestamp = document.getTimestamp("completedAt")
                     val correctAnswers = (document.getLong("correctAnswers") ?: 0).toInt()
                     val totalQuestions = (document.getLong("totalQuestions") ?: 0).toInt()
-                    val accuracy = if (totalQuestions > 0) {
-                        (correctAnswers.toDouble() / totalQuestions) * 100
-                    } else 0.0
 
                     QuizSession(
                         id = document.id,

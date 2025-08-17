@@ -165,8 +165,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 _authState.value = _authState.value.copy(
                     isLoading = false,
                     accountCreated = true,
-                    isLoggedIn = false,
-                    currentUser = null
+                    isLoggedIn = true,
+                    currentUser = newUser
                 )
             } catch (e: Exception) {
                 _authState.value = _authState.value.copy(

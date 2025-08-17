@@ -69,7 +69,6 @@ fun HomeScreen(
         val isCompact = maxWidth < 360.dp
         val horizontalPadding = if (isCompact) 12.dp else 20.dp
         val cardInternalPadding = if (isCompact) 16.dp else 24.dp
-        val quickActionHeight = if (isCompact) 88.dp else 100.dp
         val quickActionsPerRow = if (maxWidth > 520.dp) 4 else 3
 
         LazyColumn(
@@ -96,7 +95,6 @@ fun HomeScreen(
                     onNavigateToHistory = onNavigateToHistory,
                     onNavigateToRanking = onNavigateToRanking,
                     onNavigateToDashboard = onNavigateToDashboard,
-                    itemHeight = quickActionHeight,
                     columns = quickActionsPerRow,
                     spacing = if (isCompact) 8.dp else 12.dp
                 )
@@ -267,7 +265,6 @@ private fun QuickActionsAdaptive(
     onNavigateToHistory: () -> Unit,
     onNavigateToRanking: () -> Unit,
     onNavigateToDashboard: () -> Unit,
-    itemHeight: Dp,
     columns: Int,
     spacing: Dp
 ) {
@@ -294,8 +291,7 @@ private fun QuickActionsAdaptive(
                             else -> listOf(PrimaryBlue40, SecondaryTeal40)
                         },
                         onClick = callback,
-                        modifier = Modifier.weight(1f),
-                        fixedHeight = itemHeight
+                        modifier = Modifier.weight(1f)
                     )
                 }
                 repeat(columns - rowItems.size) {
@@ -313,8 +309,7 @@ private fun QuickActionCard(
     subtitle: String,
     colors: List<androidx.compose.ui.graphics.Color>,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    fixedHeight: Dp = 100.dp
+    modifier: Modifier = Modifier
 ) {
     Card(
         onClick = onClick,

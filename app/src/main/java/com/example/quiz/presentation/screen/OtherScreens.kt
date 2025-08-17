@@ -5,28 +5,39 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.quiz.presentation.viewmodel.HistoryViewModel
 import com.example.quiz.presentation.viewmodel.RankingViewModel
 import com.example.quiz.presentation.viewmodel.RankingType
-import java.text.SimpleDateFormat
-import java.util.Locale
+import com.example.quiz.data.repository.QuizPerformance
 import com.example.quiz.ui.theme.GradientStart
 import com.example.quiz.ui.theme.GradientEnd
+import com.example.quiz.ui.theme.PrimaryBlue40
+import kotlin.math.max
+import kotlin.math.min
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +48,6 @@ fun RankingScreen(
 ) {
     val userRankings by viewModel.userRankings.collectAsState()
     val selectedRankingType by viewModel.selectedRankingType.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
 
     val sortedUsers = remember(userRankings, selectedRankingType) {
         when (selectedRankingType) {
@@ -46,102 +56,97 @@ fun RankingScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadRankings()
-    }
+    LaunchedEffect(Unit) { viewModel.loadRankings() }
 
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(listOf(GradientStart, GradientEnd))
+            )
             .imePadding()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        item {
-            Card(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar"
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            text = "Ranking",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Top jogadores e desempenho",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Voltar"
+                    )
                 }
+                Text(
+                    text = "Ranking",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
-        }
-        item {
+
+            // Filtros
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     FilterChip(
                         onClick = { viewModel.selectRankingType(RankingType.POINTS) },
                         label = { Text("Maior Pontuação") },
                         selected = selectedRankingType == RankingType.POINTS,
+                        leadingIcon = if (selectedRankingType == RankingType.POINTS) {
+                            { Icon(Icons.Default.Star, contentDescription = null) }
+                        } else null,
                         modifier = Modifier.weight(1f)
                     )
                     FilterChip(
                         onClick = { viewModel.selectRankingType(RankingType.QUESTIONS) },
                         label = { Text("Mais Perguntas") },
                         selected = selectedRankingType == RankingType.QUESTIONS,
+                        leadingIcon = if (selectedRankingType == RankingType.QUESTIONS) {
+                            { Icon(Icons.Default.Leaderboard, contentDescription = null) }
+                        } else null,
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
-        }
-        item {
+
             Text(
-                text = "Tabela Geral",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.surface
+                text = "Top Jogadores",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
             )
-        }
-        if (sortedUsers.isEmpty()) {
-            item {
+
+            if (sortedUsers.isEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "📊 Nenhum dado disponível",
+                            text = "📊",
+                            style = MaterialTheme.typography.displaySmall
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Nenhum dado disponível",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -149,32 +154,33 @@ fun RankingScreen(
                         Text(
                             text = "Faça alguns quizzes para aparecer no ranking!",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 }
-            }
-        } else {
-            itemsIndexed(sortedUsers.take(10)) { index, userRanking ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (index < 3) 10.dp else 4.dp
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+            } else {
+                // Lista top 10
+                sortedUsers.take(10).forEachIndexed { index, userRanking ->
+                    val topColor = when (index) {
+                        0 -> PrimaryBlue40.copy(alpha = 0.15f)
+                        1 -> PrimaryBlue40.copy(alpha = 0.10f)
+                        2 -> PrimaryBlue40.copy(alpha = 0.05f)
+                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.0f)
+                    }
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = if (index < 3) 8.dp else 2.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
                     ) {
                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(topColor)
+                                .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
@@ -186,14 +192,13 @@ fun RankingScreen(
                                 },
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.width(50.dp)
+                                modifier = Modifier.width(48.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = userRanking.nickname,
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                     text = "${userRanking.totalQuizzes} quizzes • ${userRanking.averageAccuracy.toInt()}% precisão",
@@ -201,27 +206,28 @@ fun RankingScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                        }
-                        Column(
-                            horizontalAlignment = Alignment.End
-                        ) {
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "${userRanking.totalPoints} pts",
+                                text = when (selectedRankingType) {
+                                    RankingType.POINTS -> "${userRanking.totalPoints} pts"
+                                    RankingType.QUESTIONS -> "${userRanking.totalQuestions} perg"
+                                },
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                softWrap = false
                             )
-                            // Removed average time (property not available)
                         }
                     }
                 }
             }
-        }
-        item {
+
             Text(
-                text = "Ranking atualizado automaticamente a cada sessão concluída.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+                text = "Atualiza automaticamente a cada sessão concluída.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -237,12 +243,18 @@ fun DashboardScreen(
     val isLoading by historyViewModel.isLoading.collectAsState()
 
     LaunchedEffect(userId) {
+        android.util.Log.d("DashboardScreen", "DashboardScreen started with userId: $userId")
         historyViewModel.loadUserHistory(userId)
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(GradientStart, GradientEnd)
+                )
+            )
             .verticalScroll(rememberScrollState())
             .imePadding()
             .padding(16.dp)
@@ -281,7 +293,9 @@ fun DashboardScreen(
                 ) {
                     // Total Quizzes Card
                     Card(
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -290,7 +304,8 @@ fun DashboardScreen(
                             Text(
                                 text = "${sessionStats.totalSessions}",
                                 style = MaterialTheme.typography.displaySmall,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = "Total Quizzes",
@@ -301,7 +316,9 @@ fun DashboardScreen(
 
                     // Average Accuracy Card
                     Card(
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -310,7 +327,8 @@ fun DashboardScreen(
                             Text(
                                 text = "${sessionStats.averageAccuracy.toInt()}%",
                                 style = MaterialTheme.typography.displaySmall,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = "Avg Accuracy",
@@ -322,18 +340,50 @@ fun DashboardScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Performance Chart
+                if (sessionStats.performanceData.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Text(
+                                text = "Desempenho por Quiz",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                            
+                            PerformanceChart(
+                                performances = sessionStats.performanceData,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(220.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 // Total Points Card
                 Card(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "${sessionStats.totalPoints}",
                             style = MaterialTheme.typography.displayMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.tertiary,
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "Total Points Earned",
@@ -343,15 +393,145 @@ fun DashboardScreen(
                 }
             } ?: run {
                 Card(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text(
-                        text = "Complete your first quiz to see dashboard statistics!",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "📊",
+                            style = MaterialTheme.typography.displayLarge
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Nenhuma estatística disponível",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Complete seu primeiro quiz para ver suas estatísticas aqui!",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PerformanceChart(
+    performances: List<QuizPerformance>,
+    modifier: Modifier = Modifier
+) {
+    // Considera apenas os 10 últimos quizzes (mais recentes no fim da lista original)
+    val trimmed = remember(performances) {
+        if (performances.size > 10) performances.takeLast(10) else performances
+    }
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    
+    Canvas(modifier = modifier) {
+        val width = size.width
+        val height = size.height
+        val padding = 40f
+        
+        val chartWidth = width - 2 * padding
+        val chartHeight = height - 2 * padding
+        
+    if (trimmed.isEmpty()) return@Canvas
+        
+        // Draw grid lines
+        val gridColor = Color.Gray.copy(alpha = 0.3f)
+        
+        // Horizontal grid lines (accuracy)
+        for (i in 0..4) {
+            val y = padding + (chartHeight * i / 4)
+            drawLine(
+                color = gridColor,
+                start = Offset(padding, y),
+                end = Offset(width - padding, y),
+                strokeWidth = 1.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f))
+            )
+        }
+        
+        // Vertical grid lines (quizzes)
+    val maxPoints = if (trimmed.size > 5) 5 else trimmed.size
+        for (i in 0..maxPoints) {
+            val x = padding + (chartWidth * i / maxPoints)
+            drawLine(
+                color = gridColor,
+                start = Offset(x, padding),
+                end = Offset(x, height - padding),
+                strokeWidth = 1.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f))
+            )
+        }
+        
+        // Draw performance line
+        if (trimmed.size > 1) {
+            val path = Path()
+            
+            trimmed.forEachIndexed { index, performance ->
+                val x = padding + (chartWidth * index / (trimmed.size - 1))
+                val y = padding + chartHeight - (chartHeight * (performance.accuracy / 100.0).toFloat())
+                
+                if (index == 0) {
+                    path.moveTo(x, y)
+                } else {
+                    path.lineTo(x, y)
+                }
+            }
+            
+            // Draw line
+            drawPath(
+                path = path,
+                color = primaryColor,
+                style = Stroke(
+                    width = 3.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            )
+        }
+        
+        // Draw points
+        trimmed.forEachIndexed { index, performance ->
+            val x = padding + (chartWidth * index / max(1, trimmed.size - 1))
+            val y = padding + chartHeight - (chartHeight * (performance.accuracy / 100.0).toFloat())
+            
+            // Draw point
+            drawCircle(
+                color = primaryColor,
+                radius = 6.dp.toPx(),
+                center = Offset(x, y)
+            )
+            
+            // Draw inner circle
+            drawCircle(
+                color = surfaceColor,
+                radius = 3.dp.toPx(),
+                center = Offset(x, y)
+            )
+        }
+    }
+    
+    // Label único indicando direção temporal (mais evidente)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Mais antigo  ⇢⇢  Mais recente",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

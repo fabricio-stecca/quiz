@@ -1,9 +1,9 @@
 package com.example.quiz.presentation.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.quiz.data.database.QuizDatabase
 import com.example.quiz.data.model.QuizSession
 import com.example.quiz.data.repository.FirestoreQuizSessionRepository
 import com.example.quiz.data.repository.SessionStats
@@ -12,8 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class HistoryViewModel(application: Application) : AndroidViewModel(application) {
-    private val database = QuizDatabase.getDatabase(application)
-        private val sessionRepository = FirestoreQuizSessionRepository()
+    // Room database removido; agora usando apenas Firestore
+    private val sessionRepository = FirestoreQuizSessionRepository()
 
     private val _sessions = MutableStateFlow<List<QuizSession>>(emptyList())
     val sessions: StateFlow<List<QuizSession>> = _sessions
@@ -25,20 +25,31 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
     val isLoading: StateFlow<Boolean> = _isLoading
 
     fun loadUserHistory(userId: String) {
+        Log.d("HistoryViewModel", "Loading history for userId: $userId")
         viewModelScope.launch {
             _isLoading.value = true
             
-            // Load sessions (já ordenadas pelo repositório)
-            sessionRepository.getUserSessionsFlow(userId).collect { sessionList ->
-                _sessions.value = sessionList
+            try {
+                // Load sessions (já ordenadas pelo repositório)
+                launch {
+                    sessionRepository.getUserSessionsFlow(userId).collect { sessionList ->
+                        Log.d("HistoryViewModel", "Received ${sessionList.size} sessions")
+                        _sessions.value = sessionList
+                    }
+                }
+                
+                // Load stats
+                launch {
+                    sessionRepository.getUserStats(userId).collect { sessionStats ->
+                        Log.d("HistoryViewModel", "Received stats: $sessionStats")
+                        _stats.value = sessionStats
+                        _isLoading.value = false
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HistoryViewModel", "Error loading user history", e)
+                _isLoading.value = false
             }
-            
-            // Load stats
-            sessionRepository.getUserStats(userId).collect { sessionStats ->
-                _stats.value = sessionStats
-            }
-            
-            _isLoading.value = false
         }
     }
 

@@ -1,3 +1,7 @@
+/*
+Arquivo descontinuado: implementação Room removida do app.
+Mantido apenas como referência histórica (comentado) e para preservar quaisquer comentários originais do usuário.
+
 package com.example.quiz.data.database
 
 import androidx.room.Database
@@ -40,3 +44,4 @@ abstract class QuizDatabase : RoomDatabase() {
         }
     }
 }
+*/

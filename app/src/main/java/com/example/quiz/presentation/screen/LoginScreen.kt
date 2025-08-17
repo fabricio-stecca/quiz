@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.quiz.presentation.viewmodel.AuthViewModel
 import com.example.quiz.ui.theme.*
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

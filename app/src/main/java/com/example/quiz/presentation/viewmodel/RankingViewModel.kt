@@ -3,7 +3,6 @@ package com.example.quiz.presentation.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.quiz.data.database.QuizDatabase
 import com.example.quiz.data.model.QuizSession
 import com.example.quiz.data.model.User
 import com.example.quiz.data.repository.FirestoreQuizSessionRepository
@@ -27,7 +26,7 @@ enum class RankingType {
 }
 
 class RankingViewModel(application: Application) : AndroidViewModel(application) {
-    private val database = QuizDatabase.getDatabase(application)
+    // Room database removido; agora dependemos somente do Firestore
     private val sessionRepository = FirestoreQuizSessionRepository()
     private val firestore = FirebaseFirestore.getInstance()
 

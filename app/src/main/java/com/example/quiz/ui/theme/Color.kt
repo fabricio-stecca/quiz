@@ -13,7 +13,6 @@ val AccentOrange40 = Color(0xFFD97706) // Âmbar escuro
 
 // Cores para diferentes estados
 val SuccessGreen = Color(0xFF10B981)
-val WarningYellow = Color(0xFFF59E0B)
 val ErrorRed = Color(0xFFEF4444)
 
 // Gradientes

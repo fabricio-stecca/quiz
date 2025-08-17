@@ -1,6 +1,7 @@
 package com.example.quiz.presentation.screen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -9,10 +10,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,10 +31,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.quiz.presentation.viewmodel.QuizViewModel
@@ -361,55 +367,54 @@ private fun AnswerOptionCard(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 8.dp else 4.dp
-        ),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                PrimaryBlue40.copy(alpha = 0.1f)
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            }
-        ),
-        border = if (isSelected) {
-            ButtonDefaults.outlinedButtonBorder.copy(
-                width = 2.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(PrimaryBlue40, SecondaryTeal40)
-                )
+    // Implementação customizada para evitar "retângulo interno" e manter alinhamento perfeito.
+    val shape = RoundedCornerShape(16.dp)
+    val bgColor by animateColorAsState(
+        targetValue = if (isSelected) PrimaryBlue40.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+        label = "optionBg"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (isSelected) PrimaryBlue40 else Color.Transparent,
+        label = "optionBorder"
+    )
+    val interaction = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .clip(shape) // garante bordas arredondadas pra background + ripple
+            .background(bgColor)
+            .border(width = 2.dp, color = borderColor, shape = shape)
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+                onClick = onClick
             )
-        } else null
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AnimatedVisibility(
-                visible = isSelected,
-                enter = scaleIn() + fadeIn(),
-                exit = scaleOut() + fadeOut()
-            ) {
+            if (isSelected) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
                     tint = PrimaryBlue40,
                     modifier = Modifier.size(24.dp)
                 )
-            }
-            if (isSelected) {
                 Spacer(modifier = Modifier.width(12.dp))
             }
             Text(
                 text = option,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
-                color = if (isSelected) PrimaryBlue40 else MaterialTheme.colorScheme.onSurfaceVariant
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (isSelected) PrimaryBlue40 else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1
             )
         }
     }
@@ -519,29 +524,25 @@ fun QuizResultScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(GradientStart, GradientEnd)
-                )
+                brush = Brush.verticalGradient(listOf(GradientStart, GradientEnd))
             )
+            .padding(16.dp)
     ) {
+        // Conteúdo rolável para telas menores
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Card de resultado
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                modifier = Modifier
+                    .fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                shape = RoundedCornerShape(20.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(32.dp),
+                    modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Ícone de resultado
@@ -575,31 +576,35 @@ fun QuizResultScreen(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     
-                    Spacer(modifier = Modifier.height(32.dp))
-                    
-                    // Estatísticas
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    // Estatísticas (cards alinhados e com pesos iguais)
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         StatCard(
                             title = "Pontuação",
                             value = "${accuracy.toInt()}%",
-                            color = statusColor
+                            color = statusColor,
+                            modifier = Modifier.weight(1f)
                         )
                         StatCard(
                             title = "Acertos",
                             value = "${result.correctAnswers}/${result.totalQuestions}",
-                            color = SuccessGreen
+                            color = SuccessGreen,
+                            modifier = Modifier.weight(1f)
                         )
                         StatCard(
                             title = "Pontos",
                             value = "${result.totalPoints}",
-                            color = AccentOrange40
+                            color = AccentOrange40,
+                            modifier = Modifier.weight(1f)
                         )
                     }
-                    
-                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Spacer(modifier = Modifier.height(28.dp))
                     
                     // Botões
                     Column(
@@ -645,6 +650,7 @@ fun QuizResultScreen(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -653,29 +659,32 @@ fun QuizResultScreen(
 private fun StatCard(
     title: String,
     value: String,
-    color: androidx.compose.ui.graphics.Color
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
 ) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
-        )
+    val shape = RoundedCornerShape(16.dp)
+    Box(
+        modifier = modifier
+            .heightIn(min = 96.dp)
+            .clip(shape)
+            .background(color.copy(alpha = 0.10f))
+            .border(BorderStroke(1.dp, color.copy(alpha = 0.55f)), shape)
+            .padding(vertical = 14.dp, horizontal = 12.dp)
+            .fillMaxWidth(),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = color
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
