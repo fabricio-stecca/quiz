@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class HistoryViewModel(application: Application) : AndroidViewModel(application) {
-    // Room database removido; agora usando apenas Firestore
+
     private val sessionRepository = FirestoreQuizSessionRepository()
 
     private val _sessions = MutableStateFlow<List<QuizSession>>(emptyList())
@@ -30,7 +30,6 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
             _isLoading.value = true
             
             try {
-                // Load sessions (já ordenadas pelo repositório)
                 launch {
                     sessionRepository.getUserSessionsFlow(userId).collect { sessionList ->
                         Log.d("HistoryViewModel", "Received ${sessionList.size} sessions")
@@ -38,7 +37,7 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
                     }
                 }
                 
-                // Load stats
+
                 launch {
                     sessionRepository.getUserStats(userId).collect { sessionStats ->
                         Log.d("HistoryViewModel", "Received stats: $sessionStats")
@@ -57,7 +56,7 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _isLoading.value = true
             
-            // Use general user sessions for now - can be filtered later
+
             sessionRepository.getUserSessionsFlow(userId).collect { sessionList ->
                 val filteredSessions = sessionList.filter { it.category == category }
                 _sessions.value = filteredSessions

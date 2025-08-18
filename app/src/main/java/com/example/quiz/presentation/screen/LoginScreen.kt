@@ -93,7 +93,7 @@ fun LoginScreen(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-            // Logo animado
+
             Box(
                 modifier = Modifier
                     .size(logoSize)
@@ -118,7 +118,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(spaceAfterLogo))
 
-            // Título e subtítulo
+
             Text(
                 text = "Quiz Master",
                 style = MaterialTheme.typography.headlineLarge,
@@ -134,7 +134,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(spaceBeforeCard))
 
-            // Card de login
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -159,7 +159,7 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Campo de email
+
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -181,7 +181,7 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(fieldSpacing))
 
-                    // Campo de senha
+
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -231,7 +231,7 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(buttonTopSpacing))
 
-                    // Botão de login
+
                     val loginEnabled = !authState.isLoading && email.isNotBlank() && password.isNotBlank()
                     Button(
                         onClick = {
@@ -269,7 +269,7 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(dividerTopSpacing))
 
-                    // Divisor
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -292,7 +292,7 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(dividerTopSpacing))
 
-                    // Botão de cadastro
+
                     Button(
                         onClick = onNavigateToSignUp,
                         modifier = Modifier
@@ -317,7 +317,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(footerTopSpacing))
 
-            // Footer
+
             Text(
                 text = "Quiz Master v1.0",
                 style = MaterialTheme.typography.bodySmall,

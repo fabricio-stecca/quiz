@@ -38,10 +38,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _authState.value = _authState.value.copy(isLoading = true, errorMessage = null)
             
-            // Removido hardcode de admin; validação agora somente via Firestore
+
             
             try {
-                // Busca usuário no Firestore por email
+
                 val querySnapshot = usersCollection
                     .whereEqualTo("email", email)
                     .get()
@@ -113,7 +113,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _authState.value = _authState.value.copy(isLoading = true, errorMessage = null)
             
             try {
-                // Verifica se email já existe
+
                 val existingEmails = usersCollection
                     .whereEqualTo("email", email)
                     .get()
@@ -127,7 +127,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     return@launch
                 }
 
-                // Verifica se nickname já existe
+
                 val existingNicknames = usersCollection
                     .whereEqualTo("nickname", nickname)
                     .get()
@@ -141,12 +141,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     return@launch
                 }
 
-                // Cria novo usuário no Firestore
+
                 val userData = hashMapOf(
                     "name" to name,
                     "email" to email,
                     "nickname" to nickname,
-                    "role" to "user", // Usuários normais sempre têm role "user"
+                    "role" to "user",
                     "totalQuizzes" to 0,
                     "totalPoints" to 0,
                     "averageAccuracy" to 0.0,

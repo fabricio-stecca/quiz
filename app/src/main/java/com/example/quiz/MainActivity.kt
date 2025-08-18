@@ -29,16 +29,16 @@ class MainActivity : ComponentActivity() {
         /*ChatGPT - final
         */
 
-    // Dados agora carregados diretamente do Firestore pelos viewmodels
+
 
         
         setContent {
             QuizTheme {
-                // Usando a nova navegação com design moderno
+
                 QuizNavigation()
             }
         }
     }
     
-    // initializeQuestions removido (uso de Room eliminado)
+
 }

@@ -47,7 +47,7 @@ fun HomeScreen(
     onNavigateToDashboard: () -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
-    // Ajuste: caso o ViewModel exponha StateFlow, manter; se não, proteger com try
+
     val uiState by viewModel.uiState.collectAsState()
     val categories = uiState.categories
     val isLoading = uiState.isLoading
@@ -99,7 +99,7 @@ fun HomeScreen(
                     spacing = if (isCompact) 8.dp else 12.dp
                 )
             }
-            // Quiz section (flattened to avoid nested LazyColumn)
+
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -207,7 +207,7 @@ private fun WelcomeHeader(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Botão de refresh com animação
+
                     AnimatedVisibility(
                         visible = !isRefreshing,
                         enter = scaleIn(animationSpec = spring()),
@@ -240,7 +240,7 @@ private fun WelcomeHeader(
                         }
                     }
                     
-                    // Botão de logout
+
                     FilledIconButton(
                         onClick = onSignOut,
                         colors = IconButtonDefaults.filledIconButtonColors(
@@ -273,7 +273,7 @@ private fun QuickActionsAdaptive(
         Triple(Icons.Default.Leaderboard, "Ranking" to "Classificação", onNavigateToRanking),
         Triple(Icons.Default.Star, "Dashboard" to "Estatísticas", onNavigateToDashboard)
     )
-    // Simple flow layout
+
     Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
         actions.chunked(columns).forEach { rowItems ->
             Row(
@@ -367,7 +367,7 @@ private fun QuickActionCard(
     }
 }
 
-// Loading card extracted (was inside previous QuizSection) so we can reuse in flattened list
+
 @Composable
 private fun LoadingQuizzesCard() {
     Card(

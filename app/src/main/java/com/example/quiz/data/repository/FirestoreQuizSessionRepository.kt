@@ -43,7 +43,7 @@ class FirestoreQuizSessionRepository {
             
             sessionsCollection.add(sessionData).await()
             
-            // Atualiza as estatísticas do usuário
+
             updateUserStats(session.userId)
         } catch (e: Exception) {
             // Handle error
@@ -84,7 +84,7 @@ class FirestoreQuizSessionRepository {
             ChatGPT - final
              */
 
-            // Ordenar por data decrescente (mais recentes primeiro)
+
             val sortedSessions = sessions.sortedByDescending { it.completedAt }
             emit(sortedSessions)
         } catch (e: Exception) {
@@ -116,7 +116,7 @@ class FirestoreQuizSessionRepository {
             
             Log.d("FirestoreRepository", "totalSessions: $totalSessions, totalPoints: $totalPoints")
             
-            // Calculate average accuracy and performance data
+
             val performanceData = mutableListOf<QuizPerformance>()
             val accuracies = userSessions.documents.mapIndexedNotNull { index, doc ->
                 val correct = (doc.getLong("correctAnswers") ?: 0).toInt()
@@ -129,7 +129,7 @@ class FirestoreQuizSessionRepository {
                 if (total > 0) {
                     val accuracy = (correct.toDouble() / total) * 100
                     
-                    // Add to performance data
+
                     performanceData.add(
                         QuizPerformance(
                             quizNumber = index + 1,
@@ -178,7 +178,7 @@ class FirestoreQuizSessionRepository {
             }
             val averageAccuracy = if (accuracies.isNotEmpty()) accuracies.average() else 0.0
 
-            // Busca o usuário pelo userId 
+
             val userQuery = usersCollection.document(userId).get().await()
             if (userQuery.exists()) {
                 usersCollection.document(userId).update(

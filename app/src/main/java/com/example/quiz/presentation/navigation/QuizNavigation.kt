@@ -17,7 +17,7 @@ fun QuizNavigation(
         startDestination = "login"
     ) {
         composable("login") {
-            // Usando a nova tela de login com design moderno
+
             com.example.quiz.presentation.screen.LoginScreen(
                 onNavigateToSignUp = {
                     navController.navigate("signup")
@@ -80,7 +80,7 @@ fun QuizNavigation(
             val category = backStackEntry.arguments?.getString("category") ?: ""
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             
-            // Usando a nova tela de quiz com design moderno
+
             com.example.quiz.presentation.screen.QuizScreen(
                 category = category,
                 userId = userId,
@@ -91,7 +91,7 @@ fun QuizNavigation(
         composable("history/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             
-            // Usando a nova tela de histórico com design moderno
+
             com.example.quiz.presentation.screen.HistoryScreen(
                 userId = userId,
                 onNavigateBack = { popBackStackDebounced(navController) }
@@ -116,7 +116,7 @@ fun QuizNavigation(
         composable("admin") {
             AdminScreen(
                 onNavigateBack = {
-                    // Como admin não tem tela anterior, fazer logout
+
                     navController.navigate("login") {
                         popUpTo("login") { inclusive = true }
                     }

@@ -19,9 +19,9 @@ data class QuizUiState(
     val selectedAnswers: Map<Int, List<String>> = emptyMap(),
     val isLoading: Boolean = false,
     val isQuizCompleted: Boolean = false,
-    val timeRemaining: Int = 300, // 5 minutes in seconds
+    val timeRemaining: Int = 300,
     val score: QuizScore? = null,
-    val startTime: Long = 0L // Timestamp do início do quiz
+    val startTime: Long = 0L
 )
 
 data class QuizScore(
@@ -49,7 +49,7 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.value = _uiState.value.copy(
                     questions = questions,
                     isLoading = false,
-                    startTime = System.currentTimeMillis() // Registra o tempo de início
+                    startTime = System.currentTimeMillis()
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
@@ -80,13 +80,12 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Função de compatibilidade
     fun previousQuestion() = goToPreviousQuestion()
     
-    // Função de compatibilidade
+
     fun nextQuestion() = goToNextQuestion()
     
-    // Função de compatibilidade
+
     fun finishQuiz(userId: String, category: String) = completeQuiz(userId, category)
 
     fun updateTimer(newTime: Int) {
@@ -113,10 +112,10 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
                 (correctCount.toDouble() / questions.size) * 100
             } else 0.0
             
-            // Calcular tempo real gasto (em segundos)
+
             val currentTime = System.currentTimeMillis()
             val timeSpent = if (state.startTime > 0) {
-                ((currentTime - state.startTime) / 1000).toInt() // Converte para segundos
+                ((currentTime - state.startTime) / 1000).toInt()
             } else {
                 0
             }
@@ -131,7 +130,7 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
                 timeSpent = timeSpent
             )
             
-            // Save session to Firestore
+
             val session = QuizSession(
                 id = "",
                 userId = userId,
@@ -154,10 +153,10 @@ class QuizViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun calculatePoints(correct: Int, total: Int, timeSpent: Int): Int {
         val basePoints = correct * 10
-        // Bonus por velocidade: máximo 5 pontos por pergunta se feito em menos de 30s por pergunta
+
         val avgTimePerQuestion = if (total > 0) timeSpent / total else timeSpent
         val timeBonus = if (avgTimePerQuestion < 30) {
-            val bonus = (30 - avgTimePerQuestion) / 6 // 0-5 pontos de bonus
+            val bonus = (30 - avgTimePerQuestion) / 6
             (bonus * correct).coerceAtLeast(0)
         } else 0
         return basePoints + timeBonus

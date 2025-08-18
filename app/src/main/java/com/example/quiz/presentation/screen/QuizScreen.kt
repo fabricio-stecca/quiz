@@ -73,7 +73,7 @@ fun QuizScreen(
         )
     }
 
-    // Load questions when the screen is first composed
+
     LaunchedEffect(category) {
         viewModel.loadQuestions(category)
     }
@@ -115,7 +115,7 @@ fun QuizScreen(
                 .fillMaxSize()
                 .padding(20.dp)
         ) {
-            // Área rolável (header + pergunta)
+
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -149,7 +149,7 @@ fun QuizScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Navegação (fixada na parte inferior)
+
             QuizNavigation(
                 currentQuestion = currentQuestionIndex + 1,
                 totalQuestions = questions.size,
@@ -269,7 +269,7 @@ private fun QuizHeader(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Barra de progresso animada
+
             val progress by animateFloatAsState(
                 targetValue = currentQuestion.toFloat() / totalQuestions.toFloat(),
                 animationSpec = tween(durationMillis = 300, easing = LinearEasing),
@@ -347,7 +347,7 @@ private fun QuestionCard(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Opções de resposta
+
             question.options.forEachIndexed { index, option ->
                 Spacer(modifier = Modifier.height(12.dp))
                 
@@ -367,7 +367,7 @@ private fun AnswerOptionCard(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    // Implementação customizada para evitar "retângulo interno" e manter alinhamento perfeito.
+
     val shape = RoundedCornerShape(16.dp)
     val bgColor by animateColorAsState(
         targetValue = if (isSelected) PrimaryBlue40.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
@@ -383,7 +383,7 @@ private fun AnswerOptionCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp)
-            .clip(shape) // garante bordas arredondadas pra background + ripple
+            .clip(shape)
             .background(bgColor)
             .border(width = 2.dp, color = borderColor, shape = shape)
             .clickable(
@@ -433,7 +433,7 @@ private fun QuizNavigation(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Botão Anterior
+
         if (currentQuestion > 1) {
             OutlinedButton(
                 onClick = onPrevious,
@@ -462,7 +462,7 @@ private fun QuizNavigation(
             Spacer(modifier = Modifier.weight(1f))
         }
         
-        // Botão Próximo/Finalizar
+
         if (currentQuestion < totalQuestions) {
             Button(
                 onClick = onNext,
@@ -528,7 +528,7 @@ fun QuizResultScreen(
             )
             .padding(16.dp)
     ) {
-        // Conteúdo rolável para telas menores
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -545,7 +545,7 @@ fun QuizResultScreen(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Ícone de resultado
+
                     Box(
                         modifier = Modifier
                             .size(80.dp)
@@ -578,7 +578,7 @@ fun QuizResultScreen(
                     
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    // Estatísticas (cards alinhados e com pesos iguais)
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -606,7 +606,7 @@ fun QuizResultScreen(
 
                     Spacer(modifier = Modifier.height(28.dp))
                     
-                    // Botões
+
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)

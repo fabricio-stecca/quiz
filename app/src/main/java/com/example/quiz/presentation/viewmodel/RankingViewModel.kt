@@ -26,7 +26,7 @@ enum class RankingType {
 }
 
 class RankingViewModel(application: Application) : AndroidViewModel(application) {
-    // Room database removido; agora dependemos somente do Firestore
+
     private val sessionRepository = FirestoreQuizSessionRepository()
     private val firestore = FirebaseFirestore.getInstance()
 
@@ -48,15 +48,15 @@ class RankingViewModel(application: Application) : AndroidViewModel(application)
             _isLoading.value = true
             
             try {
-                // Buscar todas as sessões do Firestore
+
                 sessionRepository.getAllSessionsFlow().collect { allSessions ->
                     val userStats = mutableMapOf<String, UserRankingData>()
                     
-                    // Agrupar sessões por usuário e calcular estatísticas
+
                     for (session in allSessions) {
                         val existing = userStats[session.userId]
                         if (existing == null) {
-                            // Buscar nickname do usuário no Firestore
+
                             val userDoc = firestore.collection("users")
                                 .document(session.userId)
                                 .get()

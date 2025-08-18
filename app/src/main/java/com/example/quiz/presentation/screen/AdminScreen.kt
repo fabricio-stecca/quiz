@@ -53,12 +53,12 @@ fun AdminScreen(
     val scope = rememberCoroutineScope()
     val firestore = FirebaseFirestore.getInstance()
 
-    // Função para recarregar quizzes
+
     val reloadQuizzes = {
         refreshTrigger++
     }
 
-    // Carregar quizzes existentes
+
     LaunchedEffect(currentScreen, refreshTrigger) {
         if (currentScreen == "main") {
             isLoading = true
@@ -101,7 +101,7 @@ fun AdminScreen(
             onDeleteQuiz = { quiz ->
                 scope.launch {
                     try {
-                        // Deletar todas as questões da categoria
+
                         val questionsSnapshot = firestore
                             .collection("questions")
                             .document(quiz.id)
@@ -113,13 +113,13 @@ fun AdminScreen(
                             questionDoc.reference.delete().await()
                         }
                         
-                        // Deletar o documento da categoria
+
                         firestore.collection("questions")
                             .document(quiz.id)
                             .delete()
                             .await()
                         
-                        // Recarregar lista
+
                         reloadQuizzes()
                     } catch (e: Exception) {
                         // Handle error
@@ -172,7 +172,7 @@ fun MainAdminScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header simples (consistente com Ranking/Dashboard)
+
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -191,7 +191,7 @@ fun MainAdminScreen(
                     )
                 }
             }
-            // Botão criar novo
+
             item {
                 Button(
                     onClick = onCreateNew,
@@ -205,7 +205,7 @@ fun MainAdminScreen(
                     Text("Criar Novo Quiz", fontWeight = FontWeight.SemiBold)
                 }
             }
-            // Título lista
+
             item {
                 Text(
                     text = "Quizzes Existentes",
@@ -308,7 +308,7 @@ fun QuizManagementCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ícone
+
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -414,7 +414,7 @@ fun CreateEditQuizScreen(
     val scope = rememberCoroutineScope()
     val firestore = FirebaseFirestore.getInstance()
 
-    // Carregar questões existentes se estiver em modo de edição
+
     LaunchedEffect(existingQuiz) {
         if (isEditMode && existingQuiz != null) {
             isLoading = true
@@ -438,7 +438,7 @@ fun CreateEditQuizScreen(
                 }
                 
                 questions = if (loadedQuestions.isEmpty()) {
-                    listOf(QuestionForm()) // Pelo menos uma questão
+                    listOf(QuestionForm())
                 } else {
                     loadedQuestions
                 }
@@ -449,7 +449,7 @@ fun CreateEditQuizScreen(
             }
             isLoading = false
         } else {
-            // Modo criação - começar com uma questão
+
             questions = listOf(QuestionForm())
         }
     }

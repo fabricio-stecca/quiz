@@ -23,7 +23,7 @@ class FirestoreQuestionRepository {
             /*
             Gemini - fim
              */
-            // Buscar questões da sub-coleção
+
             val querySnapshot = questionsCollection
                 .document(categoryId)
                 .collection("perguntas")
@@ -51,11 +51,11 @@ class FirestoreQuestionRepository {
 
     fun getAllCategoriesFlow(): Flow<List<String>> = flow {
         try {
-            // Buscar documentos da coleção questions (que são as categorias)
+
             val querySnapshot = questionsCollection.get().await()
             val categories = querySnapshot.documents
                 .mapNotNull { doc ->
-                    // Verificar se o documento tem sub-coleção de perguntas
+
                     val categoryId = doc.id
                     val categoryName = doc.getString("name") ?: categoryId.replace("_", " ")
                         .split(" ")
@@ -72,11 +72,11 @@ class FirestoreQuestionRepository {
 
     suspend fun addSampleQuestions() {
         try {
-            // Verifica se já existem perguntas
+
             val existingQuestions = questionsCollection.limit(1).get().await()
             if (!existingQuestions.isEmpty) return
 
-            // Adiciona perguntas de exemplo em inglês
+
             val sampleQuestions = listOf(
                 mapOf(
                     "question" to "What is the capital of Brazil?",
@@ -136,18 +136,18 @@ class FirestoreQuestionRepository {
                 )
             )
 
-            // Adiciona cada pergunta ao Firestore
+
             sampleQuestions.forEach { questionData ->
                 questionsCollection.add(questionData).await()
             }
         } catch (e: Exception) {
-            // Handle error silently
+            // Handle Error
         }
     }
 
     suspend fun addQuizBrasil() {
         try {
-            // Quiz específico sobre o Brasil - 5 perguntas
+
             val quizBrasil = listOf(
                 mapOf(
                     "question" to "Qual é a capital do Brasil?",

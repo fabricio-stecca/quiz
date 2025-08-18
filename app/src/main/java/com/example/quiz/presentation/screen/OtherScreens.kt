@@ -73,7 +73,7 @@ fun RankingScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -91,7 +91,7 @@ fun RankingScreen(
                 )
             }
 
-            // Filtros
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -160,7 +160,7 @@ fun RankingScreen(
                     }
                 }
             } else {
-                // Lista top 10
+
                 sortedUsers.take(10).forEachIndexed { index, userRanking ->
                     val topColor = when (index) {
                         0 -> PrimaryBlue40.copy(alpha = 0.15f)
@@ -291,7 +291,7 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Total Quizzes Card
+
                     Card(
                         modifier = Modifier.weight(1f),
                         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -314,7 +314,7 @@ fun DashboardScreen(
                         }
                     }
 
-                    // Average Accuracy Card
+
                     Card(
                         modifier = Modifier.weight(1f),
                         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -340,7 +340,7 @@ fun DashboardScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Performance Chart
+
                 if (sessionStats.performanceData.isNotEmpty()) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -369,7 +369,7 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Total Points Card
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -429,7 +429,7 @@ fun PerformanceChart(
     performances: List<QuizPerformance>,
     modifier: Modifier = Modifier
 ) {
-    // Considera apenas os 10 últimos quizzes (mais recentes no fim da lista original)
+
     val trimmed = remember(performances) {
         if (performances.size > 10) performances.takeLast(10) else performances
     }
@@ -446,10 +446,10 @@ fun PerformanceChart(
         
     if (trimmed.isEmpty()) return@Canvas
         
-        // Draw grid lines
+
         val gridColor = Color.Gray.copy(alpha = 0.3f)
         
-        // Horizontal grid lines (accuracy)
+
         for (i in 0..4) {
             val y = padding + (chartHeight * i / 4)
             drawLine(
@@ -461,7 +461,7 @@ fun PerformanceChart(
             )
         }
         
-        // Vertical grid lines (quizzes)
+
     val maxPoints = if (trimmed.size > 5) 5 else trimmed.size
         for (i in 0..maxPoints) {
             val x = padding + (chartWidth * i / maxPoints)
@@ -474,7 +474,7 @@ fun PerformanceChart(
             )
         }
         
-        // Draw performance line
+
         if (trimmed.size > 1) {
             val path = Path()
             
@@ -489,7 +489,7 @@ fun PerformanceChart(
                 }
             }
             
-            // Draw line
+
             drawPath(
                 path = path,
                 color = primaryColor,
@@ -500,19 +500,19 @@ fun PerformanceChart(
             )
         }
         
-        // Draw points
+
         trimmed.forEachIndexed { index, performance ->
             val x = padding + (chartWidth * index / max(1, trimmed.size - 1))
             val y = padding + chartHeight - (chartHeight * (performance.accuracy / 100.0).toFloat())
             
-            // Draw point
+
             drawCircle(
                 color = primaryColor,
                 radius = 6.dp.toPx(),
                 center = Offset(x, y)
             )
             
-            // Draw inner circle
+
             drawCircle(
                 color = surfaceColor,
                 radius = 3.dp.toPx(),
@@ -521,7 +521,7 @@ fun PerformanceChart(
         }
     }
     
-    // Label único indicando direção temporal (mais evidente)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()

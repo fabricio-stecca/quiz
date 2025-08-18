@@ -35,7 +35,7 @@ fun HistoryScreen(
     viewModel: HistoryViewModel = viewModel()
 ) {
     val sessions by viewModel.sessions.collectAsState()
-    // Removendo stats para simplificar compilação
+
     val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(userId) {
@@ -159,7 +159,7 @@ private fun HistoryHeader(onNavigateBack: () -> Unit) {
 }
 
 
-// Removed SessionsList (integrated into main LazyColumn)
+
 
 @Composable
 private fun SessionCard(session: com.example.quiz.data.model.QuizSession) {
@@ -227,7 +227,7 @@ private fun SessionCard(session: com.example.quiz.data.model.QuizSession) {
                     }
                 }
                 
-                // Badge de pontuação
+
                 Card(
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(
@@ -246,7 +246,7 @@ private fun SessionCard(session: com.example.quiz.data.model.QuizSession) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Métricas da sessão
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
